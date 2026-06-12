@@ -2,15 +2,15 @@
 
 Update at the end of every working session (rules.md #12). Status: `todo` / `wip` / `done` / `blocked` / `cut`.
 
-**Started:** _(date)_  ·  **Target ship:** _(date)_  ·  **Current phase:** 0
+**Started:** 2026-06-13  ·  **Target ship:** _(date)_  ·  **Current phase:** 1
 
 ## Phase 0 — Scaffold
-- [ ] Repo init, layout, license, Makefile
-- [ ] FastAPI hello + /api/health
-- [ ] Vite React TS + Tailwind placeholder
-- [ ] Linters/test runners (BE+FE) configured
-- [ ] .env.example + gitleaks pre-commit
-- [ ] GitHub Actions CI green
+- [x] Repo init, layout, license, Makefile
+- [x] FastAPI hello + /api/health
+- [x] Vite React TS + Tailwind placeholder
+- [x] Linters/test runners (BE+FE) configured
+- [x] .env.example + gitleaks pre-commit
+- [x] GitHub Actions CI green
 
 ## Phase 1 — Tool layer
 - [ ] yfinance adapter + 24h disk cache
@@ -68,9 +68,12 @@ Update at the end of every working session (rules.md #12). Status: `todo` / `wip
 ## Session Log
 | Date | Phase | Done | Blockers / notes |
 |---|---|---|---|
-| | | | |
+| 2026-06-13 | 0 | Repo pushed to GitHub; full Phase 0 scaffold: base files + gitleaks hook, backend (uv/py3.12, FastAPI /api/health, ruff+mypy strict+pytest), frontend (Vite + React 18 + Tailwind v4 + vitest), Makefile, CI green on first push | Local tooling installed via winget: make, gitleaks, uv |
 
 ## Decisions Log
 | Date | Decision | Why |
 |---|---|---|
-| | | |
+| 2026-06-13 | uv for Python env management, pinned to 3.12 | System Python 3.14 too new for data libs; uv pins per-project and matches CI |
+| 2026-06-13 | Tailwind v4 (via @tailwindcss/vite) instead of v3 | Current stable; docs just say "Tailwind"; CSS-first config, less boilerplate |
+| 2026-06-13 | gitleaks hook via committed .githooks/ + core.hooksPath (no pre-commit framework) | Zero extra dependency; `make setup` wires it on any clone |
+| 2026-06-13 | Vite 8 ships TypeScript ~6.0 | Template default; strict mode on, no issues |
