@@ -1,0 +1,8 @@
+#!/bin/sh
+# Block commits containing secrets (rules.md #1). Bypassing with --no-verify is not acceptable;
+# if gitleaks flags a false positive, add it to .gitleaks.toml allowlist instead.
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks not found on PATH — install it (winget install Gitleaks.Gitleaks)" >&2
+  exit 1
+fi
+exec gitleaks git --pre-commit --staged --redact --verbose
