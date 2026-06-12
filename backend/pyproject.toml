@@ -4,8 +4,14 @@ version = "0.1.0"
 description = "Backend for Market Briefing Agent — hand-rolled agentic loop, FastAPI, SSE"
 requires-python = ">=3.12"
 dependencies = [
+    "ddgs>=9.14.4",
     "fastapi>=0.115",
+    "httpx>=0.28.1",
+    "pandas>=3.0.3",
+    "pyarrow>=24.0.0",
+    "trafilatura>=2.1.0",
     "uvicorn[standard]>=0.32",
+    "yfinance>=1.4.1",
 ]
 
 [dependency-groups]
@@ -14,6 +20,7 @@ dev = [
     "httpx>=0.28",
     "ruff>=0.8",
     "mypy>=1.13",
+    "pandas-stubs>=3.0.3.260530",
 ]
 
 [tool.uv]
@@ -30,6 +37,10 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.12"
 strict = true
 files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["yfinance.*", "ddgs.*", "trafilatura.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
