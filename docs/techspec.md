@@ -138,4 +138,4 @@ Future agents (e.g., Claim Verifier) drop in as `src/agents/<name>/` with the sa
 
 ## 10. Secrets & Config
 
-Env vars only (full list in 00_START_HERE.md). `.env` gitignored; gitleaks pre-commit; provider spend cap set in Anthropic console before public deploy.
+Env vars only (full list in 00_START_HERE.md). `.env` gitignored; gitleaks pre-commit; provider spend cap set in Anthropic console before public deploy. Dep: `python-dotenv` loads `backend/.env` for local CLI/dev runs (`make brief`); production reads real env vars.

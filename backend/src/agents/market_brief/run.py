@@ -107,6 +107,11 @@ def main() -> None:
         return
 
     # ── Agent loop mode ───────────────────────────────────────────────────
+    # Load backend/.env (gitignored) so GEMINI_API_KEY etc. are available.
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
     try:
         from src.llm import get_backend
 
