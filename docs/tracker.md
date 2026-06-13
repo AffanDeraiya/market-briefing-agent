@@ -2,7 +2,7 @@
 
 Update at the end of every working session (rules.md #12). Status: `todo` / `wip` / `done` / `blocked` / `cut`.
 
-**Started:** 2026-06-13  ·  **Target ship:** _(date)_  ·  **Current phase:** 2
+**Started:** 2026-06-13  ·  **Target ship:** _(date)_  ·  **Current phase:** 3
 
 ## Phase 0 — Scaffold
 - [x] Repo init, layout, license, Makefile
@@ -22,13 +22,13 @@ Update at the end of every working session (rules.md #12). Status: `todo` / `wip
 - [x] Detector tests pass at 100%
 - [x] tools demo CLI works
 
-## Phase 2 — Agent loop
-- [ ] runner.py loop (registry, caps, finalize-now, repair)
-- [ ] prompts/system.md v1 (phases + citation rules)
-- [ ] MarketBrief schema + strict parse + validation rules
-- [ ] Usage/cost tracking per run
-- [ ] Cassette recorder (--record)
-- [ ] `make brief TICKER=AAPL` end-to-end + first cassette
+## Phase 2 — Agent loop  (code-complete; live run deferred pending GEMINI_API_KEY)
+- [x] runner.py loop (registry, caps, finalize-now, repair) — agent.py + nodes.py
+- [x] prompts/system.md v1 (phases + citation rules) — prompts.py
+- [x] MarketBrief schema + strict parse + validation rules — src/schemas.py
+- [x] Usage/cost tracking per run — events.estimate_cost_usd + usage event
+- [x] Cassette recorder (--record) — cassette.py (CassetteRecorder + RecordingBackend)
+- [~] `make brief TICKER=AAPL` end-to-end + first cassette — CLI + Makefile wired; **live run + cassette deferred (no API key yet)**
 
 ## Phase 3 — API + guards
 - [ ] POST /api/brief SSE (all event types per schema.md §3)
@@ -70,6 +70,7 @@ Update at the end of every working session (rules.md #12). Status: `todo` / `wip
 |---|---|---|---|
 | 2026-06-13 | 0 | Repo pushed to GitHub; full Phase 0 scaffold: base files + gitleaks hook, backend (uv/py3.12, FastAPI /api/health, ruff+mypy strict+pytest), frontend (Vite + React 18 + Tailwind v4 + vitest), Makefile, CI green on first push | Local tooling installed via winget: make, gitleaks, uv |
 | 2026-06-13 | 1 | **Phase 1 complete.** Tool layer done: yfinance adapter + 24h disk cache, get_price_history (compact weekly aggregates + notable days) + get_fundamentals, compute_indicators + detect_anomalies (pure fns), ddgs/Tavily search + trafilatura fetch_page. 5 frozen 1y OHLCV fixtures (AAPL/MSFT/NVDA/RELIANCE.NS/TSLA) + hand-labeled `labels.json`; detector regression test asserts 100% match. `run.py` demo CLI prints every tool's output. 70 tests pass, ruff+mypy strict clean. | Opus drives decisions; Sonnet 4.6 subagent wrote run.py + labels test (Fable 5 unavailable). One ruff fixup (unused `sys` import) applied by hand. |
+| 2026-06-13 | 2 | **Phase 2 code-complete.** src/llm.py provider adapter (Anthropic native + OpenAI-compat Gemini/Groq, normalized Turn/ToolCall/ToolSpec/LLMResponse, defensive arg parsing). src/schemas.py MarketBrief + strict parser (citation resolution, uncited-bullet rejection, list caps, immutable disclaimer). Agent internals: tools.py (7-tool registry, 10s timeout), state.py RunState + budgets, prompts.py system prompt v1, nodes.py + agent.py hand-rolled loop (finalize-now, one repair round-trip, usage/cost), events.py emitter, cassette.py recorder. `make brief` + .env autoload. **162 tests pass, ruff+mypy strict clean.** | Live `make brief` + first cassette deferred — no GEMINI_API_KEY available this session; user chose to proceed to Phase 3. 4 Sonnet 4.6 subagents wrote schemas/llm/tools+state/loop from Opus specs; Opus wrote prompts.py by hand. |
 
 ## Decisions Log
 | Date | Decision | Why |
@@ -80,3 +81,6 @@ Update at the end of every working session (rules.md #12). Status: `todo` / `wip
 | 2026-06-13 | Vite 8 ships TypeScript ~6.0 | Template default; strict mode on, no issues |
 | 2026-06-13 | `labels.json` is a frozen regression baseline (date, kind, severity per ticker), not a separate hand-curated truth set | Detector is deterministic; high-severity events map to real market moves (e.g. MSFT 2026-01-29 −10% earnings crash w/ volume surge + gap). Snapshotting locks detector behavior; refreezing fixtures requires re-inspecting + re-labeling. |
 | 2026-06-13 | Fixtures committed to git (~16KB parquet each) | CI must run the detector regression test fully offline (rules.md: CI never makes live calls). |
+| 2026-06-13 | OpenAI-compat backend uses the `openai` SDK pointed at Gemini/Groq base_urls; Anthropic uses native SDK | techspec §1 names both wire formats; `openai` is the natural client for OpenAI-compatible endpoints. Deps: anthropic, openai. |
+| 2026-06-13 | `python-dotenv` loads backend/.env for CLI/dev runs | Ergonomic local key handling matching the .env.example convention; prod uses real env vars. |
+| 2026-06-13 | Phase 2 live run + cassette deferred (no API key) | Gemini free-tier key not available this session; agent is fully unit-tested offline (FakeBackend), so live run is the only gap. Recorded as a known-pending item. |
