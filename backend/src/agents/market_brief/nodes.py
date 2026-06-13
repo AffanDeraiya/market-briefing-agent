@@ -137,15 +137,16 @@ def _post_tool_side_effects(
         pass
 
     # Capture structured tool outputs for deterministic brief enrichment.
+    # 52-week low/high come from get_price_history; indicators from compute_indicators.
     try:
-        if tc_name == "compute_indicators" and not is_error:
-            state.indicators_out = json.loads(content)
+        if tc_name == "get_price_history" and not is_error:
+            state.price_history_out = json.loads(content)
     except Exception:  # noqa: BLE001
         pass
 
     try:
-        if tc_name == "get_fundamentals" and not is_error:
-            state.fundamentals_out = json.loads(content)
+        if tc_name == "compute_indicators" and not is_error:
+            state.indicators_out = json.loads(content)
     except Exception:  # noqa: BLE001
         pass
 
@@ -252,11 +253,11 @@ def attach_market_data(state: RunState, brief: MarketBrief) -> None:
             "volume_trend": ind.get("volume_trend"),
         }
 
-    if state.fundamentals_out:
-        f = state.fundamentals_out
+    if state.price_history_out:
+        ph = state.price_history_out
         for key in ("low_52w", "high_52w"):
-            if f.get(key) is not None:
-                brief.snapshot[key] = f[key]
+            if ph.get(key) is not None:
+                brief.snapshot[key] = ph[key]
 
 
 # ---------------------------------------------------------------------------

@@ -74,7 +74,7 @@ class RunState(BaseModel):
     # date (ISO YYYY-MM-DD) -> kind; populated after detect_anomalies is called
     anomaly_dates: dict[str, str] = Field(default_factory=dict)
     # latest structured outputs captured for deterministic brief enrichment
-    fundamentals_out: dict[str, Any] | None = None
+    price_history_out: dict[str, Any] | None = None
     indicators_out: dict[str, Any] | None = None
 
     def elapsed_s(self) -> float:

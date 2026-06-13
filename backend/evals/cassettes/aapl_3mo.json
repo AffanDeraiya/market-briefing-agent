@@ -10,15 +10,15 @@
         "text": "",
         "tool_calls": [
           {
-            "id": "function-call-16098454611457867640",
+            "id": "function-call-9859466770880408312",
             "name": "get_price_history",
             "input": {
-              "period": "3mo",
-              "ticker": "AAPL"
+              "ticker": "AAPL",
+              "period": "3mo"
             }
           },
           {
-            "id": "function-call-16098454611457867317",
+            "id": "function-call-9859466770880406263",
             "name": "get_fundamentals",
             "input": {
               "ticker": "AAPL"
@@ -33,20 +33,20 @@
       }
     },
     {
-      "request_messages_hash": "fcfe8f0b2cae5cfae2976e1f5318889ffaebe256c52f8a11d2b7f5de1bd0d8ba",
+      "request_messages_hash": "78617d848512d9709e6b9dd735042590e4300e7614e90f1e86539d8944ba7aeb",
       "response": {
         "text": "",
         "tool_calls": [
           {
-            "id": "function-call-471951985351817026",
+            "id": "function-call-7754927371425775630",
             "name": "compute_indicators",
             "input": {
-              "period": "3mo",
-              "ticker": "AAPL"
+              "ticker": "AAPL",
+              "period": "3mo"
             }
           },
           {
-            "id": "function-call-471951985351816173",
+            "id": "function-call-7754927371425777087",
             "name": "detect_anomalies",
             "input": {
               "period": "3mo",
@@ -62,44 +62,36 @@
       }
     },
     {
-      "request_messages_hash": "90c6d3c1f798cfe07a90f9cc80d2f4e1a4d6c3d91499ccc609eaa4264b7e183f",
+      "request_messages_hash": "fa39f2259bfaa93744b5bf4be79bd23e426523fb7df9425e4894cc0e98155e37",
       "response": {
         "text": "",
         "tool_calls": [
           {
-            "id": "function-call-16651104227527934134",
-            "name": "get_company_news",
-            "input": {
-              "max_results": 3,
-              "query": "Apple Inc. AAPL",
-              "to_date": "2026-06-12",
-              "from_date": "2026-06-06"
-            }
-          },
-          {
-            "id": "function-call-16651104227527934193",
+            "id": "function-call-16506754294243464722",
             "name": "get_company_news",
             "input": {
               "max_results": 5,
-              "query": "Apple Inc. AAPL"
+              "from_date": "2026-06-06",
+              "to_date": "2026-06-12",
+              "query": "Apple Inc. stock"
             }
           }
         ],
         "usage": {
           "input_tokens": 2987,
-          "output_tokens": 88
+          "output_tokens": 59
         },
         "stop_reason": "tool_calls"
       }
     },
     {
-      "request_messages_hash": "0125f88a22acfeb6cb665977b0e75b38635e5d1c910339176072f043545478e9",
+      "request_messages_hash": "ecfb6b2f322642294f379eb92ab775a1c7f6d3b3c95fc53acd2ea97483aef734",
       "response": {
-        "text": "```json\n{\n  \"ticker\": \"AAPL\",\n  \"name\": \"Apple Inc.\",\n  \"as_of\": \"2026-06-13\",\n  \"period\": \"3mo\",\n  \"snapshot\": {\n    \"price\": 291.13,\n    \"change_1d\": -1.52,\n    \"change_1m\": -2.59,\n    \"change_period\": 16.5,\n    \"market_cap\": 4275929874432,\n    \"pe\": 35.203144,\n    \"sector\": \"Technology\"\n  },\n  \"technical_summary\": \"Apple (AAPL) shows a neutral RSI-14 of 44.5, with its price currently 4.2% below the 20-day simple moving average but 2.02% above the 50-day simple moving average over the 3-month period [c1]. The annualized volatility stands at 23.1%, and the stock experienced a maximum drawdown of -7.8% from its peak on 2026-06-02 to its trough on 2026-06-09 [c1]. Volume trend has been flat [c1].\",\n  \"anomalies\": [\n    {\n      \"date\": \"2026-06-09\",\n      \"kind\": \"price_drop\",\n      \"magnitude\": \"-3.6% (2.5σ)\",\n      \"explanation\": \"On 2026-06-09, AAPL experienced a price drop of -3.6% (2.5σ) [c1]. This drop followed Apple's WWDC 2026 keynote, where the company made its Siri AI reveal [c4]. While some speculated the drop was due to investors not being impressed by Apple's AI announcements [c3], analysts have broadly raised price targets despite the slide [c2].\",\n      \"confidence\": \"high\",\n      \"citations\": [\"c1\", \"c2\", \"c3\", \"c4\"]\n    }\n  ],\n  \"news_highlights\": [\n    {\n      \"text\": \"AAPL stock slid after the WWDC 2026 keynote, losing roughly $25 per share, but analysts broadly raised price targets [c2].\",\n      \"citations\": [\"c2\"]\n    },\n    {\n      \"text\": \"The recent price drop for AAPL stock might be a reaction to Apple's AI announcements during WWDC [c3].\",\n      \"citations\": [\"c3\"]\n    },\n    {\n      \"text\": \"Apple unveiled major improvements for Siri, including conversational capabilities, at WWDC 2026 [c4].\",\n      \"citations\": [\"c4\"]\n    },\n    {\n      \"text\": \"Apple's AI announcements sparked debate on Wall Street, with some analysts suggesting an unexpected win for Google and NVIDIA [c5].\",\n      \"citations\": [\"c5\"]\n    },\n    {\n      \"text\": \"Questions were raised by some analysts about whether Apple truly has the 'AI chops to deliver' on its AI ambitions [c6].\",\n      \"citations\": [\"c6\"]\n    }\n  ],\n  \"bull_case\": [\n    {\n      \"text\": \"Analysts broadly raising price targets for AAPL despite the post-WWDC stock slide suggests a constructive longer-term view from Wall Street [c2].\",\n      \"citations\": [\"c2\"]\n    },\n    {\n      \"text\": \"Bernstein sees significant AI-driven growth opportunities for Apple without incurring substantial costs [c8].\",\n      \"citations\": [\"c8\"]\n    },\n    {\n      \"text\": \"Apple's AI ambition could lead to a 'picks-and-shovels' trade, potentially benefiting certain partners in the ecosystem [c7].\",\n      \"citations\": [\"c7\"]\n    },\n    {\n      \"text\": \"Major improvements to Siri, including enhanced conversational AI announced at WWDC, could bolster user experience and ecosystem stickiness [c4].\",\n      \"citations\": [\"c4\"]\n    }\n  ],\n  \"bear_case\": [\n    {\n      \"text\": \"The significant stock drop after WWDC suggests some investors may have been unimpressed with Apple's AI announcements [c3].\",\n      \"citations\": [\"c3\"]\n    },\n    {\n      \"text\": \"Questions have been raised about Apple's actual capabilities and 'AI chops to deliver' on its ambitious AI plans [c6].\",\n      \"citations\": [\"c6\"]\n    },\n    {\n      \"text\": \"Apple's AI reveal potentially handed an unexpected win to competitors like Google and NVIDIA, implying less differentiation for Apple [c5].\",\n      \"citations\": [\"c5\"]\n    }\n  ],\n  \"risks\": [\n    {\n      \"text\": \"Investor skepticism regarding the novelty and execution of Apple's new AI initiatives could limit future upside and market reception [c3, c6].\",\n      \"citations\": [\"c3\", \"c6\"]\n    },\n    {\n      \"text\": \"The perception that Apple's AI announcements benefited competitors could lead to increased competitive pressures and market share challenges [c5].\",\n      \"citations\": [\"c5\"]\n    },\n    {\n      \"text\": \"Future revenue growth and stock performance may largely hinge on the successful adoption and monetization of these newly announced AI features [c8].\",\n      \"citations\": [\"c8\"]\n    }\n  ],\n  \"citations\": [\n    {\n      \"id\": \"c1\",\n      \"url\": null,\n      \"title\": \"Tool Data\",\n      \"kind\": \"tool\"\n    },\n    {\n      \"id\": \"c2\",\n      \"url\": \"https://www.macrumors.com/2026/06/11/aapl-stock-slides-following-wwdc/\",\n      \"title\": \"AAPL Stock Slides Following WWDC, But Analysts Broadly Raise Targets\",\n      \"kind\": \"news\"\n    },\n    {\n      \"id\": \"c3\",\n      \"url\": \"https://9to5mac.com/2026/06/10/aapl-stock-slides-but-is-it-a-reaction-to-ai-announcements/\",\n      \"title\": \"AAPL stock slides, but is it a reaction to AI announcements?\",\n      \"kind\": \"news\"\n    },\n    {\n      \"id\": \"c4\",\n      \"url\": \"https://www.cnbc.com/2026/06/08/apple-wwdc-2026-live-updates.html\",\n      \"title\": \"WWDC 2026: Apple makes its big Siri AI reveal, changes Liquid Glass and more\",\n      \"kind\": \"news\"\n    },\n    {\n      \"id\": \"c5\",\n      \"url\": \"https://www.msn.com/en-us/money/general/apple-s-ai-reveal-hands-an-unexpected-win-to-google-nvidia/ar-AA25hCvT?ocid=BingNewsVerp\",\n      \"title\": \"Apple's AI reveal hands an unexpected win to Google, NVIDIA\",\n      \"kind\": \"news\"\n    },\n    {\n      \"id\": \"c6\",\n      \"url\": \"https://www.msn.com/en-us/technology/artificial-intelligence/apple-reveals-siri-ai-but-gene-munster-asks-the-key-question-do-they-have-the-ai-chops-to-deliver/ar-AA25b6QQ?ocid=BingNewsVerp\",\n      \"title\": \"Apple reveals Siri AI, but Gene Munster asks the key question: 'Do they have the AI chops to deliver?'\",\n      \"kind\": \"news\"\n    },\n    {\n      \"id\": \"c7\",\n      \"url\": \"https://www.msn.com/en-us/technology/hardware-and-devices/apple-s-ai-ambition-has-a-picks-and-shovels-trade-here-s-who-could-win/ar-AA258mUu?ocid=BingNewsVerp\",\n      \"title\": \"Apple's AI ambition has a picks-and-shovels trade — here's who could win\",\n      \"kind\": \"news\"\n    },\n    {\n      \"id\": \"c8\",\n      \"url\": \"https://www.msn.com/en-us/news/technology/bernstein-sees-ai-driven-growth-opportunities-for-apple-ahead-of-wwdc-2026-aapl/ar-AA24V66f?ocid=BingNewsVerp\",\n      \"title\": \"Bernstein sees AI-driven growth opportunities for Apple ahead of WWDC 2026 (AAPL)\",\n      \"kind\": \"news\"\n    }\n  ],\n  \"disclaimer\": \"Educational project. Not financial advice. Data via Yahoo Finance; may be delayed or inaccurate.\"\n}\n```",
+        "text": "```json\n{\n  \"ticker\": \"AAPL\",\n  \"name\": \"Apple Inc.\",\n  \"as_of\": \"2026-06-13\",\n  \"period\": \"3mo\",\n  \"snapshot\": {\n    \"price\": 291.13,\n    \"change_1d\": -1.52,\n    \"change_1m\": -2.59,\n    \"change_period\": 16.5,\n    \"market_cap\": 4275929874432,\n    \"pe\": 35.203144,\n    \"sector\": \"Technology\"\n  },\n  \"technical_summary\": \"AAPL's 3-month technical analysis shows the price is trading 4.2% below its 20-day Simple Moving Average (SMA20) and 2.02% above its 50-day Simple Moving Average (SMA50) [c_tool]. The 14-day Relative Strength Index (RSI) is 44.5, indicating a neutral signal [c_tool]. The annualized volatility for the period is 23.1% [c_tool]. The stock experienced a maximum drawdown of 7.8% between 2026-06-02 and 2026-06-09 [c_tool]. Volume trend is flat [c_tool].\",\n  \"anomalies\": [\n    {\n      \"date\": \"2026-06-09\",\n      \"kind\": \"price_drop\",\n      \"magnitude\": \"-3.6% (2.5σ)\",\n      \"explanation\": \"Apple Inc. experienced a significant price drop of 3.6% on June 9, 2026 [c_tool], which may be related to market reactions following the WWDC 2026 event on June 8, 2026, where Apple made significant announcements regarding its AI efforts, including a major Siri AI reveal [c1, c2].\",\n      \"confidence\": \"high\",\n      \"citations\": [\"c1\", \"c2\", \"c_tool\"]\n    }\n  ],\n  \"news_highlights\": [\n    {\n      \"text\": \"Apple is set to reboot its AI efforts, with significant announcements regarding Siri AI made at WWDC 2026 [c1, c2].\",\n      \"citations\": [\"c1\", \"c2\"]\n    },\n    {\n      \"text\": \"Analysts are debating whether to buy, sell, or hold Apple stock as it sits near a record high with looming catalysts [c3].\",\n      \"citations\": [\"c3\"]\n    }\n  ],\n  \"bull_case\": [\n    {\n      \"text\": \"Apple stock is near a record high, with potential future catalysts that could sustain momentum [c3].\",\n      \"citations\": [\"c3\"]\n    },\n    {\n      \"text\": \"The company's significant investment and reboot of its AI strategy, including major Siri AI enhancements, could drive future growth [c1, c2].\",\n      \"citations\": [\"c1\", \"c2\"]\n    }\n  ],\n  \"bear_case\": [\n    {\n      \"text\": \"Despite being near a record high, the stock experienced a notable price drop following recent AI announcements, indicating potential market skepticism or 'sell the news' reaction [c_tool, c1, c2].\",\n      \"citations\": [\"c_tool\", \"c1\", \"c2\"]\n    }\n  ],\n  \"risks\": [\n    {\n      \"text\": \"Market reactions to new product announcements, such as the WWDC 2026 AI reveal, can lead to short-term price volatility [c1, c2, c_tool].\",\n      \"citations\": [\"c1\", \"c2\", \"c_tool\"]\n    }\n  ],\n  \"citations\": [\n    {\n      \"id\": \"c_tool\",\n      \"url\": null,\n      \"title\": \"Tool Data\",\n      \"kind\": \"tool\"\n    },\n    {\n      \"id\": \"c1\",\n      \"url\": \"https://pro.thestreet.com/portfolio/apple-set-to-reboot-ai-effort-in-ceos-final-stand-8-key-items-shaping-the-stock-market-monday\",\n      \"title\": \"Apple Set to Reboot AI Effort in CEO’s Final Stand: 8 Key Items Shaping the Stoc...\",\n      \"kind\": \"news\"\n    },\n    {\n      \"id\": \"c2\",\n      \"url\": \"https://www.cnbc.com/2026/06/08/apple-wwdc-2026-live-updates.html\",\n      \"title\": \"WWDC 2026: Apple makes its big Siri AI reveal, changes Liquid Glass and more\",\n      \"kind\": \"news\"\n    },\n    {\n      \"id\": \"c3\",\n      \"url\": \"https://www.msn.com/en-us/money/topstocks/apple-stock-buy-sell-or-hold/ar-AA251hoL\",\n      \"title\": \"Apple Stock: Buy, Sell, or Hold?\",\n      \"kind\": \"news\"\n    }\n  ],\n  \"disclaimer\": \"Educational project. Not financial advice. Data via Yahoo Finance; may be delayed or inaccurate.\"\n}\n```",
         "tool_calls": [],
         "usage": {
-          "input_tokens": 4189,
-          "output_tokens": 2101
+          "input_tokens": 3698,
+          "output_tokens": 1249
         },
         "stop_reason": "stop"
       }
@@ -110,8 +102,8 @@
       "seq": 1,
       "name": "get_price_history",
       "input": {
-        "period": "3mo",
-        "ticker": "AAPL"
+        "ticker": "AAPL",
+        "period": "3mo"
       },
       "output": "{\"currency\":\"USD\",\"latest_close\":291.13,\"change_pct\":{\"d1\":-1.52,\"m1\":-2.59,\"period\":16.5},\"week_aggregates\":[{\"week_start\":\"2026-03-09\",\"close\":249.89,\"volume\":36930000},{\"week_start\":\"2026-03-16\",\"close\":247.76,\"volume\":223388900},{\"week_start\":\"2026-03-23\",\"close\":248.57,\"volume\":203871800},{\"week_start\":\"2026-03-30\",\"close\":255.68,\"volume\":160393100},{\"week_start\":\"2026-04-06\",\"close\":260.24,\"volume\":191923800},{\"week_start\":\"2026-04-13\",\"close\":269.98,\"volume\":239278200},{\"week_start\":\"2026-04-20\",\"close\":270.81,\"volume\":201605900},{\"week_start\":\"2026-04-27\",\"close\":279.88,\"volume\":283297200},{\"week_start\":\"2026-05-04\",\"close\":293.05,\"volume\":252233300},{\"week_start\":\"2026-05-11\",\"close\":300.23,\"volume\":230867400},{\"week_start\":\"2026-05-18\",\"close\":308.82,\"volume\":201591700},{\"week_start\":\"2026-05-25\",\"close\":312.06,\"volume\":216678600},{\"week_start\":\"2026-06-01\",\"close\":307.34,\"volume\":254400900},{\"week_start\":\"2026-06-08\",\"close\":291.13,\"volume\":282165800}],\"notable_days\":[{\"date\":\"2026-03-31\",\"close\":253.56,\"ret_pct\":2.9,\"volume\":49598100},{\"date\":\"2026-04-15\",\"close\":266.18,\"ret_pct\":2.94,\"volume\":49913500},{\"date\":\"2026-05-01\",\"close\":279.88,\"ret_pct\":3.24,\"volume\":79915400},{\"date\":\"2026-06-02\",\"close\":315.2,\"ret_pct\":2.9,\"volume\":44534700},{\"date\":\"2026-06-09\",\"close\":290.55,\"ret_pct\":-3.64,\"volume\":70108800}],\"high_52w\":315.2,\"low_52w\":194.87}"
     },
@@ -127,8 +119,8 @@
       "seq": 3,
       "name": "compute_indicators",
       "input": {
-        "period": "3mo",
-        "ticker": "AAPL"
+        "ticker": "AAPL",
+        "period": "3mo"
       },
       "output": "{\"sma20_vs_price\":-4.2,\"sma50_vs_price\":2.02,\"rsi14\":44.5,\"rsi_signal\":\"neutral\",\"annualized_vol_pct\":23.1,\"max_drawdown_pct\":{\"value\":-7.8,\"peak_date\":\"2026-06-02\",\"trough_date\":\"2026-06-09\"},\"volume_trend\":\"flat\"}"
     },
@@ -145,21 +137,12 @@
       "seq": 5,
       "name": "get_company_news",
       "input": {
-        "max_results": 3,
-        "query": "Apple Inc. AAPL",
-        "to_date": "2026-06-12",
-        "from_date": "2026-06-06"
-      },
-      "output": "{\"results\":[{\"title\":\"AAPL Stock Slides Following WWDC, But Analysts Broadly Raise Targets\",\"snippet\":\"Apple shares have lost roughly $25 per share this week following the company's WWDC 2026 keynote, though a wave of upward analyst price target revisions suggests Wall Street's longer-term view of Apple remains constructive.\",\"url\":\"https://www.macrumors.com/2026/06/11/aapl-stock-slides-following-wwdc/\",\"source\":\"MacRumors\",\"published\":\"2026-06-11\"},{\"title\":\"AAPL stock slides, but is it a reaction to AI announcements?\",\"snippet\":\"There's been an unusually large drop in the price of AAPL stock so far this week, losing roughly $25 per share in the two days since the WWDC keynote. While some are inevitably speculating that investors weren't impressed by Apple's AI announcements,\",\"url\":\"https://9to5mac.com/2026/06/10/aapl-stock-slides-but-is-it-a-reaction-to-ai-announcements/\",\"source\":\"9to5Mac\",\"published\":\"2026-06-10\"},{\"title\":\"WWDC 2026: Apple makes its big Siri AI reveal, changes Liquid Glass and more\",\"snippet\":\"Apple said that one major improvement for Siri is that users will be able to converse back and forth with Siri. After asking Siri about the World Cup in a demo, the user is able to pull down the tab to access a new text input field and more information about, in the example, World Cup matches. Siri's answers are also longer.\",\"url\":\"https://www.cnbc.com/2026/06/08/apple-wwdc-2026-live-updates.html\",\"source\":\"CNBC\",\"published\":\"2026-06-08\"}]}"
-    },
-    {
-      "seq": 6,
-      "name": "get_company_news",
-      "input": {
         "max_results": 5,
-        "query": "Apple Inc. AAPL"
+        "from_date": "2026-06-06",
+        "to_date": "2026-06-12",
+        "query": "Apple Inc. stock"
       },
-      "output": "{\"results\":[{\"title\":\"Apple's AI reveal hands an unexpected win to Google, NVIDIA\",\"snippet\":\"Apple Inc.’s AAPL latest AI announcements sparked a fresh debate on Wall Street, with analysts divided over whether the ...\",\"url\":\"https://www.msn.com/en-us/money/general/apple-s-ai-reveal-hands-an-unexpected-win-to-google-nvidia/ar-AA25hCvT?ocid=BingNewsVerp\",\"source\":\"MSN on MSN\",\"published\":\"2026-06-11\"},{\"title\":\"Apple reveals Siri AI, but Gene Munster asks the key question: 'Do they have the AI chops to deliver?'\",\"snippet\":\"Apple Inc.’s AAPL long-awaited unveiling of Siri AI at its Worldwide Developers Conference (WWDC) drew mixed reactions from ...\",\"url\":\"https://www.msn.com/en-us/technology/artificial-intelligence/apple-reveals-siri-ai-but-gene-munster-asks-the-key-question-do-they-have-the-ai-chops-to-deliver/ar-AA25b6QQ?ocid=BingNewsVerp\",\"source\":\"MSN on MSN\",\"published\":\"2026-06-09\"},{\"title\":\"Apple's AI ambition has a picks-and-shovels trade — here's who could win\",\"snippet\":\"Apple Inc.'s AAPL WWDC 2026 kicks off Monday and is expected to be one of the most consequential developer conferences in ...\",\"url\":\"https://www.msn.com/en-us/technology/hardware-and-devices/apple-s-ai-ambition-has-a-picks-and-shovels-trade-here-s-who-could-win/ar-AA258mUu?ocid=BingNewsVerp\",\"source\":\"Benzinga on MSN\",\"published\":\"2026-06-09\"},{\"title\":\"Bernstein sees AI-driven growth opportunities for Apple ahead of WWDC 2026 (AAPL)\",\"snippet\":\"Apple Inc. (NASDAQ:AAPL) could unlock significant earnings growth from artificial intelligence initiatives without incurring ...\",\"url\":\"https://www.msn.com/en-us/news/technology/bernstein-sees-ai-driven-growth-opportunities-for-apple-ahead-of-wwdc-2026-aapl/ar-AA24V66f?ocid=BingNewsVerp\",\"source\":\"InvestorsHub on MSN\",\"published\":\"2026-06-06\"},{\"title\":\"Apple Inc.\",\"snippet\":\"View Apple Inc. AAPL stock quote prices, financial information, real-time forecasts, and company news from CNN.\",\"url\":\"https://www.cnn.com/markets/stocks/AAPL\",\"source\":\"CNN\",\"published\":\"2025-08-25\"}]}"
+      "output": "{\"results\":[{\"title\":\"10 Information Technology Stocks With Whale Alerts In Today's Session - Applied...\",\"snippet\":\"...Disclaimer Service Status Sitemap © 2026 Benzinga | All Rights Reserved...logo AAOI Applied...\",\"url\":\"https://www.benzinga.com/insights/options/26/06/53091303/10-information-technology-stocks-with-whale-alerts-in-todays-session\",\"source\":\"Benzinga\",\"published\":\"2026-06-09\"},{\"title\":\"Apple Set to Reboot AI Effort in CEO’s Final Stand: 8 Key Items Shaping the Stoc...\",\"snippet\":\"Google & SpaceX, Nvidia & SK Hynix, Marvell joining the S&P 500, other headlines are moving stocks...\",\"url\":\"https://pro.thestreet.com/portfolio/apple-set-to-reboot-ai-effort-in-ceos-final-stand-8-key-items-shaping-the-stock-market-monday\",\"source\":\"TheStreet.com\",\"published\":\"2026-06-08\"},{\"title\":\"Apple Stock: Buy, Sell, or Hold?\",\"snippet\":\"The tech giant's stock is sitting near a record high, and looming catalysts could keep the momentum going.\",\"url\":\"https://www.msn.com/en-us/money/topstocks/apple-stock-buy-sell-or-hold/ar-AA251hoL\",\"source\":\"The Motley Fool\",\"published\":\"2026-06-07\"},{\"title\":\"WWDC 2026: Apple makes its big Siri AI reveal, changes Liquid Glass and more\",\"snippet\":\"Apple said that one major improvement for Siri is that users will be able to converse back and forth with Siri. After asking Siri about the World Cup in a demo, the user is able to pull down the tab to access a new text input field and more information about, in the example, World Cup matches. Siri's answers are also longer.\",\"url\":\"https://www.cnbc.com/2026/06/08/apple-wwdc-2026-live-updates.html\",\"source\":\"CNBC\",\"published\":\"2026-06-08\"},{\"title\":\"Vanguard and iShares S&P 500 ETFs Compared: Is There Really a Difference?\",\"snippet\":\"*Stock Advisor returns as of June 10, 2026. Brendan Coffey has no position in any of the stocks...\",\"url\":\"https://finance.yahoo.com/markets/stocks/articles/vanguard-ishares-p-500-etfs-155557687.html\",\"source\":\"Motley Fool · via Yahoo Finance\",\"published\":\"2026-06-10\"}]}"
     }
   ],
   "final_brief": {
@@ -187,179 +170,105 @@
       "sma50_vs_price": 2.02,
       "volume_trend": "flat"
     },
-    "technical_summary": "Apple (AAPL) shows a neutral RSI-14 of 44.5, with its price currently 4.2% below the 20-day simple moving average but 2.02% above the 50-day simple moving average over the 3-month period [c1]. The annualized volatility stands at 23.1%, and the stock experienced a maximum drawdown of -7.8% from its peak on 2026-06-02 to its trough on 2026-06-09 [c1]. Volume trend has been flat [c1].",
+    "technical_summary": "AAPL's 3-month technical analysis shows the price is trading 4.2% below its 20-day Simple Moving Average (SMA20) and 2.02% above its 50-day Simple Moving Average (SMA50) [c_tool]. The 14-day Relative Strength Index (RSI) is 44.5, indicating a neutral signal [c_tool]. The annualized volatility for the period is 23.1% [c_tool]. The stock experienced a maximum drawdown of 7.8% between 2026-06-02 and 2026-06-09 [c_tool]. Volume trend is flat [c_tool].",
     "anomalies": [
       {
         "date": "2026-06-09",
         "kind": "price_drop",
         "magnitude": "-3.6% (2.5σ)",
-        "explanation": "On 2026-06-09, AAPL experienced a price drop of -3.6% (2.5σ) [c1]. This drop followed Apple's WWDC 2026 keynote, where the company made its Siri AI reveal [c4]. While some speculated the drop was due to investors not being impressed by Apple's AI announcements [c3], analysts have broadly raised price targets despite the slide [c2].",
+        "explanation": "Apple Inc. experienced a significant price drop of 3.6% on June 9, 2026 [c_tool], which may be related to market reactions following the WWDC 2026 event on June 8, 2026, where Apple made significant announcements regarding its AI efforts, including a major Siri AI reveal [c1, c2].",
         "confidence": "high",
         "citations": [
           "c1",
           "c2",
-          "c3",
-          "c4"
+          "c_tool"
         ]
       }
     ],
     "news_highlights": [
       {
-        "text": "AAPL stock slid after the WWDC 2026 keynote, losing roughly $25 per share, but analysts broadly raised price targets [c2].",
+        "text": "Apple is set to reboot its AI efforts, with significant announcements regarding Siri AI made at WWDC 2026 [c1, c2].",
         "citations": [
+          "c1",
           "c2"
         ]
       },
       {
-        "text": "The recent price drop for AAPL stock might be a reaction to Apple's AI announcements during WWDC [c3].",
+        "text": "Analysts are debating whether to buy, sell, or hold Apple stock as it sits near a record high with looming catalysts [c3].",
         "citations": [
           "c3"
-        ]
-      },
-      {
-        "text": "Apple unveiled major improvements for Siri, including conversational capabilities, at WWDC 2026 [c4].",
-        "citations": [
-          "c4"
-        ]
-      },
-      {
-        "text": "Apple's AI announcements sparked debate on Wall Street, with some analysts suggesting an unexpected win for Google and NVIDIA [c5].",
-        "citations": [
-          "c5"
-        ]
-      },
-      {
-        "text": "Questions were raised by some analysts about whether Apple truly has the 'AI chops to deliver' on its AI ambitions [c6].",
-        "citations": [
-          "c6"
         ]
       }
     ],
     "bull_case": [
       {
-        "text": "Analysts broadly raising price targets for AAPL despite the post-WWDC stock slide suggests a constructive longer-term view from Wall Street [c2].",
-        "citations": [
-          "c2"
-        ]
-      },
-      {
-        "text": "Bernstein sees significant AI-driven growth opportunities for Apple without incurring substantial costs [c8].",
-        "citations": [
-          "c8"
-        ]
-      },
-      {
-        "text": "Apple's AI ambition could lead to a 'picks-and-shovels' trade, potentially benefiting certain partners in the ecosystem [c7].",
-        "citations": [
-          "c7"
-        ]
-      },
-      {
-        "text": "Major improvements to Siri, including enhanced conversational AI announced at WWDC, could bolster user experience and ecosystem stickiness [c4].",
-        "citations": [
-          "c4"
-        ]
-      }
-    ],
-    "bear_case": [
-      {
-        "text": "The significant stock drop after WWDC suggests some investors may have been unimpressed with Apple's AI announcements [c3].",
+        "text": "Apple stock is near a record high, with potential future catalysts that could sustain momentum [c3].",
         "citations": [
           "c3"
         ]
       },
       {
-        "text": "Questions have been raised about Apple's actual capabilities and 'AI chops to deliver' on its ambitious AI plans [c6].",
+        "text": "The company's significant investment and reboot of its AI strategy, including major Siri AI enhancements, could drive future growth [c1, c2].",
         "citations": [
-          "c6"
+          "c1",
+          "c2"
         ]
-      },
+      }
+    ],
+    "bear_case": [
       {
-        "text": "Apple's AI reveal potentially handed an unexpected win to competitors like Google and NVIDIA, implying less differentiation for Apple [c5].",
+        "text": "Despite being near a record high, the stock experienced a notable price drop following recent AI announcements, indicating potential market skepticism or 'sell the news' reaction [c_tool, c1, c2].",
         "citations": [
-          "c5"
+          "c_tool",
+          "c1",
+          "c2"
         ]
       }
     ],
     "risks": [
       {
-        "text": "Investor skepticism regarding the novelty and execution of Apple's new AI initiatives could limit future upside and market reception [c3, c6].",
+        "text": "Market reactions to new product announcements, such as the WWDC 2026 AI reveal, can lead to short-term price volatility [c1, c2, c_tool].",
         "citations": [
-          "c3",
-          "c6"
-        ]
-      },
-      {
-        "text": "The perception that Apple's AI announcements benefited competitors could lead to increased competitive pressures and market share challenges [c5].",
-        "citations": [
-          "c5"
-        ]
-      },
-      {
-        "text": "Future revenue growth and stock performance may largely hinge on the successful adoption and monetization of these newly announced AI features [c8].",
-        "citations": [
-          "c8"
+          "c1",
+          "c2",
+          "c_tool"
         ]
       }
     ],
     "citations": [
       {
-        "id": "c1",
+        "id": "c_tool",
         "url": null,
         "title": "Tool Data",
         "kind": "tool"
       },
       {
+        "id": "c1",
+        "url": "https://pro.thestreet.com/portfolio/apple-set-to-reboot-ai-effort-in-ceos-final-stand-8-key-items-shaping-the-stock-market-monday",
+        "title": "Apple Set to Reboot AI Effort in CEO’s Final Stand: 8 Key Items Shaping the Stoc...",
+        "kind": "news"
+      },
+      {
         "id": "c2",
-        "url": "https://www.macrumors.com/2026/06/11/aapl-stock-slides-following-wwdc/",
-        "title": "AAPL Stock Slides Following WWDC, But Analysts Broadly Raise Targets",
-        "kind": "news"
-      },
-      {
-        "id": "c3",
-        "url": "https://9to5mac.com/2026/06/10/aapl-stock-slides-but-is-it-a-reaction-to-ai-announcements/",
-        "title": "AAPL stock slides, but is it a reaction to AI announcements?",
-        "kind": "news"
-      },
-      {
-        "id": "c4",
         "url": "https://www.cnbc.com/2026/06/08/apple-wwdc-2026-live-updates.html",
         "title": "WWDC 2026: Apple makes its big Siri AI reveal, changes Liquid Glass and more",
         "kind": "news"
       },
       {
-        "id": "c5",
-        "url": "https://www.msn.com/en-us/money/general/apple-s-ai-reveal-hands-an-unexpected-win-to-google-nvidia/ar-AA25hCvT?ocid=BingNewsVerp",
-        "title": "Apple's AI reveal hands an unexpected win to Google, NVIDIA",
-        "kind": "news"
-      },
-      {
-        "id": "c6",
-        "url": "https://www.msn.com/en-us/technology/artificial-intelligence/apple-reveals-siri-ai-but-gene-munster-asks-the-key-question-do-they-have-the-ai-chops-to-deliver/ar-AA25b6QQ?ocid=BingNewsVerp",
-        "title": "Apple reveals Siri AI, but Gene Munster asks the key question: 'Do they have the AI chops to deliver?'",
-        "kind": "news"
-      },
-      {
-        "id": "c7",
-        "url": "https://www.msn.com/en-us/technology/hardware-and-devices/apple-s-ai-ambition-has-a-picks-and-shovels-trade-here-s-who-could-win/ar-AA258mUu?ocid=BingNewsVerp",
-        "title": "Apple's AI ambition has a picks-and-shovels trade — here's who could win",
-        "kind": "news"
-      },
-      {
-        "id": "c8",
-        "url": "https://www.msn.com/en-us/news/technology/bernstein-sees-ai-driven-growth-opportunities-for-apple-ahead-of-wwdc-2026-aapl/ar-AA24V66f?ocid=BingNewsVerp",
-        "title": "Bernstein sees AI-driven growth opportunities for Apple ahead of WWDC 2026 (AAPL)",
+        "id": "c3",
+        "url": "https://www.msn.com/en-us/money/topstocks/apple-stock-buy-sell-or-hold/ar-AA251hoL",
+        "title": "Apple Stock: Buy, Sell, or Hold?",
         "kind": "news"
       }
     ],
     "disclaimer": "Educational project. Not financial advice. Data via Yahoo Finance; may be delayed or inaccurate."
   },
   "usage": {
-    "input_tokens": 11647,
-    "output_tokens": 2271,
+    "input_tokens": 11156,
+    "output_tokens": 1390,
     "est_cost_usd": 0.0,
-    "tool_calls": 6,
+    "tool_calls": 5,
     "iterations": 4,
-    "latency_ms": 27546
+    "latency_ms": 21828
   }
 }

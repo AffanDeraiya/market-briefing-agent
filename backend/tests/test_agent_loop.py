@@ -372,7 +372,7 @@ def test_attach_market_data_populates_indicators_and_52w() -> None:
         "max_drawdown_pct": {"value": -7.8, "peak_date": "2026-06-02", "trough_date": "2026-06-09"},
         "volume_trend": "flat",
     }
-    state.fundamentals_out = {"low_52w": 194.87, "high_52w": 315.20, "sector": "Technology"}
+    state.price_history_out = {"low_52w": 194.87, "high_52w": 315.20, "latest_close": 291.13}
 
     attach_market_data(state, brief)
 
