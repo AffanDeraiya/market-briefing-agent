@@ -15,7 +15,7 @@
 | Streaming | SSE (`sse-starlette`) | One-way agent→UI event stream |
 | Rate limiting | `slowapi` per-IP + custom global daily counter | |
 | Frontend | React 18 + Vite + TypeScript + Tailwind + Zustand | |
-| Charts | Recharts | Price/volume + anomaly markers |
+| Charts | Recharts (base) + custom SVG anomaly overlay | Recharts draws price line / volume bars / axes / crosshair tooltip; the amber anomaly marker, its pin label, and the bidirectional hover-link to the Anomaly card are a thin custom overlay (the investigation marker is the product differentiator, kept bespoke). Phase 4 shipped a hand-rolled SVG stand-in; Phase 5 migrates the base to Recharts. |
 | Testing | pytest + httpx; Vitest (FE) | Cassette-based agent tests (see §7) |
 | Lint | ruff + mypy; eslint + prettier | CI-enforced |
 | CI | GitHub Actions: lint → unit tests → eval smoke | No live API calls in CI |
