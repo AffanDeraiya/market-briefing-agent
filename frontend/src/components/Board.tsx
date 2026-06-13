@@ -1,0 +1,173 @@
+// Board — assembles chart, snapshot, range bar, then brief sections 01–06.
+// Shows skeleton shimmer for each section until its data is ready.
+
+import { useEffect, useRef } from 'react';
+import type { MarketBrief, ChartDataPayload } from '../lib/types';
+import { SkeletonVeil } from './Skeleton';
+import { PriceChart } from './PriceChart';
+import { SnapshotBar } from './SnapshotBar';
+import { RangeBar } from './RangeBar';
+import { TechnicalRead } from './TechnicalRead';
+import { AnomalySection } from './AnomalyCard';
+import { NewsList } from './NewsList';
+import { BullBear } from './BullBear';
+import { Risks } from './Risks';
+import { Sources } from './Sources';
+
+interface Props {
+  brief: MarketBrief | null;
+  chartData: ChartDataPayload | null;
+  ticker: string;
+  period: string;
+  isStreaming: boolean;
+}
+
+// Chart sigma lookup from chart anomalies
+function buildSigmaMap(chartData: ChartDataPayload | null): Record<string, string> {
+  if (!chartData) return {};
+  const map: Record<string, string> = {};
+  for (const a of chartData.anomalies) {
+    if (a.sigma) map[a.date] = a.sigma;
+  }
+  return map;
+}
+
+interface SectionWrapperProps {
+  ready: boolean;
+  children: React.ReactNode;
+  minHeight?: number;
+  delay?: number;
+}
+
+function SectionWrapper({ ready, children, minHeight = 80, delay = 0 }: SectionWrapperProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (ready && ref.current) {
+      const el = ref.current;
+      const veil = el.querySelector('.skel-veil');
+      if (veil) {
+        setTimeout(() => {
+          veil.remove();
+          el.style.opacity = '1';
+          el.style.transform = 'none';
+        }, delay);
+      }
+    }
+  }, [ready, delay]);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        position: 'relative',
+        minHeight: ready ? undefined : minHeight,
+        opacity: ready ? 1 : 1,
+        transition: 'opacity 0.4s ease, transform 0.4s ease',
+      }}
+    >
+      {!ready && <SkeletonVeil />}
+      {children}
+    </div>
+  );
+}
+
+export function Board({ brief, chartData, ticker, period, isStreaming }: Props) {
+  const sigmas = buildSigmaMap(chartData);
+
+  return (
+    <div className="board">
+      {/* Chart */}
+      <SectionWrapper ready={!!chartData} minHeight={260}>
+        {chartData ? (
+          <PriceChart chartData={chartData} period={period} ticker={ticker} />
+        ) : (
+          <div className="chartbox" style={{ minHeight: 260 }} />
+        )}
+      </SectionWrapper>
+
+      {/* Snapshot bar */}
+      <SectionWrapper ready={!!brief} minHeight={60} delay={80}>
+        {brief ? (
+          <SnapshotBar snapshot={brief.snapshot} period={period} />
+        ) : (
+          <div className="snapbar" style={{ minHeight: 60 }} />
+        )}
+      </SectionWrapper>
+
+      {/* 52-week range bar */}
+      <SectionWrapper ready={!!brief} minHeight={70} delay={120}>
+        {brief ? <RangeBar snapshot={brief.snapshot} /> : <div style={{ minHeight: 70 }} />}
+      </SectionWrapper>
+
+      {/* Section 01 — Technical read */}
+      <SectionWrapper ready={!!brief} minHeight={80} delay={160}>
+        {brief ? (
+          <TechnicalRead brief={brief} />
+        ) : (
+          <div className="doc-sec" style={{ minHeight: 80 }} />
+        )}
+      </SectionWrapper>
+
+      {/* Section 02 — Anomaly investigated */}
+      <SectionWrapper ready={!!brief} minHeight={80} delay={200}>
+        {brief ? (
+          <AnomalySection brief={brief} chartSigmas={sigmas} />
+        ) : (
+          <div className="doc-sec" style={{ minHeight: 80 }} />
+        )}
+      </SectionWrapper>
+
+      {/* Section 03 — News */}
+      <SectionWrapper ready={!!brief} minHeight={80} delay={240}>
+        {brief ? (
+          <NewsList brief={brief} />
+        ) : (
+          <div className="doc-sec" style={{ minHeight: 80 }} />
+        )}
+      </SectionWrapper>
+
+      {/* Section 04 — Bull & bear */}
+      <SectionWrapper ready={!!brief} minHeight={80} delay={280}>
+        {brief ? (
+          <BullBear brief={brief} />
+        ) : (
+          <div className="doc-sec" style={{ minHeight: 80 }} />
+        )}
+      </SectionWrapper>
+
+      {/* Section 05 — Risks */}
+      <SectionWrapper ready={!!brief} minHeight={80} delay={320}>
+        {brief ? (
+          <Risks brief={brief} />
+        ) : (
+          <div className="doc-sec" style={{ minHeight: 80 }} />
+        )}
+      </SectionWrapper>
+
+      {/* Section 06 — Sources */}
+      <SectionWrapper ready={!!brief} minHeight={80} delay={360}>
+        {brief ? (
+          <Sources brief={brief} />
+        ) : (
+          <div className="doc-sec" style={{ minHeight: 80 }} />
+        )}
+      </SectionWrapper>
+
+      {/* Error / streaming hints */}
+      {isStreaming && !brief && (
+        <p
+          style={{
+            textAlign: 'center',
+            color: 'var(--tt)',
+            fontSize: 13,
+            marginTop: 16,
+            fontFamily: 'JetBrains Mono',
+          }}
+        >
+          agent working…
+        </p>
+      )}
+    </div>
+  );
+}
