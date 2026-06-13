@@ -4,11 +4,15 @@ version = "0.1.0"
 description = "Backend for Market Briefing Agent — hand-rolled agentic loop, FastAPI, SSE"
 requires-python = ">=3.12"
 dependencies = [
+    "anthropic>=0.40",
     "ddgs>=9.14.4",
     "fastapi>=0.115",
     "httpx>=0.28.1",
+    "openai>=1.50",
     "pandas>=3.0.3",
     "pyarrow>=24.0.0",
+    "slowapi>=0.1.9",
+    "sse-starlette>=2.1",
     "trafilatura>=2.1.0",
     "uvicorn[standard]>=0.32",
     "yfinance>=1.4.1",

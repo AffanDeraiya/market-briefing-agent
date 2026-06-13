@@ -5,7 +5,7 @@
 | Layer | Choice | Notes |
 |---|---|---|
 | Agent | Hand-rolled tool-use loop — no LangChain/LangGraph/CrewAI. See schema.md §1 | The loop consumes normalized types from `llm.py`, not provider wire formats |
-| LLM adapter | `src/llm.py` — two backends behind `LLM_PROVIDER`: `anthropic` (native Anthropic Python SDK, Messages API `tools`) and `gemini` (OpenAI-compatible endpoint; also covers Groq via base_url) | Normalizes Anthropic `tool_use`/`tool_result` blocks and OpenAI-style `tool_calls` into internal `ToolCall`/`ToolResult` types |
+| LLM adapter | `src/llm.py` — two backends behind `LLM_PROVIDER`: `anthropic` (native `anthropic` SDK, Messages API `tools`) and `gemini`/`groq` (the `openai` SDK pointed at the provider's OpenAI-compatible `base_url`) | Normalizes Anthropic `tool_use`/`tool_result` blocks and OpenAI-style `tool_calls` into internal `ToolCall`/`ToolResult` types. Deps: `anthropic` (native blocks), `openai` (OpenAI-compat clients for Gemini/Groq) |
 | Model | Dev/demo: `gemini-2.5-flash` on the **free tier** (~1,500 req/day, $0). Showcase/cassette recording: `claude-haiku-4-5` | `LLM_PROVIDER` + `LLM_MODEL` env vars; zero spend until Anthropic budget exists |
 | Backend | Python 3.11+, FastAPI, uvicorn | Async throughout |
 | Market data | `yfinance` | No key. Wrapped in adapter (`tools/market_data.py`) with 24h disk cache |
