@@ -10,6 +10,7 @@ import type {
   Period,
 } from '../lib/types';
 import { DEMO_EVENTS, DEMO_BRIEF, DEMO_CHART_DATA } from '../lib/demoFixture';
+import { streamBrief } from '../lib/sse';
 
 export type RunStatus =
   | 'idle'
@@ -79,12 +80,14 @@ export interface RunState {
   applyEvent: (ev: BriefEvent) => void;
   reset: () => void;
   startDemo: () => void;
+  startRun: (ticker: string, period: Period) => void;
   stopRun: () => void;
   setHoveredAnomaly: (date: string | null) => void;
   loadRecent: (r: RecentBrief) => void;
 }
 
 let demoTimeoutIds: ReturnType<typeof setTimeout>[] = [];
+let activeRunController: AbortController | null = null;
 
 export const useRunStore = create<RunState>((set, get) => ({
   ticker: '',
@@ -124,6 +127,8 @@ export const useRunStore = create<RunState>((set, get) => ({
   stopRun: () => {
     demoTimeoutIds.forEach(clearTimeout);
     demoTimeoutIds = [];
+    activeRunController?.abort();
+    activeRunController = null;
     set({ status: 'stopped' });
   },
 
@@ -274,6 +279,39 @@ export const useRunStore = create<RunState>((set, get) => ({
       }, delay);
       demoTimeoutIds.push(id);
     }
+  },
+
+  startRun: (ticker: string, period: Period) => {
+    // Cancel any in-flight demo timers and previous stream
+    demoTimeoutIds.forEach(clearTimeout);
+    demoTimeoutIds = [];
+    activeRunController?.abort();
+
+    const controller = new AbortController();
+    activeRunController = controller;
+
+    set({
+      status: 'streaming',
+      ticker,
+      period,
+      name: ticker,
+      log: [],
+      chartData: null,
+      brief: null,
+      usage: null,
+      error: null,
+      hoveredAnomaly: null,
+    });
+
+    streamBrief({ ticker, period }, (ev) => get().applyEvent(ev), controller.signal).catch(
+      (e: unknown) => {
+        if (controller.signal.aborted) return;
+        set({
+          status: 'error',
+          error: e instanceof Error ? e.message : 'stream failed',
+        });
+      }
+    );
   },
 
   loadRecent: (r: RecentBrief) => {

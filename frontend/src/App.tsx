@@ -19,6 +19,7 @@ export function App() {
   const usage = useRunStore((s) => s.usage);
   const error = useRunStore((s) => s.error);
   const startDemo = useRunStore((s) => s.startDemo);
+  const startRun = useRunStore((s) => s.startRun);
   const reset = useRunStore((s) => s.reset);
   const stopRun = useRunStore((s) => s.stopRun);
 
@@ -31,11 +32,11 @@ export function App() {
   const latencyS = usage ? Math.round(usage.latency_ms / 1000) : undefined;
 
   const handleGenerate = (newTicker: string, newPeriod: Period) => {
-    // Start demo (no backend required yet); wire real streamBrief() behind same action.
-    // newTicker and newPeriod will be used when real SSE is wired up.
-    void newTicker;
-    void newPeriod;
-    startDemo();
+    if (import.meta.env.VITE_API_BASE) {
+      startRun(newTicker, newPeriod);
+    } else {
+      startDemo();
+    }
   };
 
   const handleBackHome = () => {
