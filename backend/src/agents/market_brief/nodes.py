@@ -37,6 +37,7 @@ __all__ = [
     "run_tool_calls",
     "strip_code_fences",
     "parse_final",
+    "attach_market_data",
     "inject_finalize",
     "inject_repair",
 ]
@@ -135,6 +136,19 @@ def _post_tool_side_effects(
     except Exception:  # noqa: BLE001
         pass
 
+    # Capture structured tool outputs for deterministic brief enrichment.
+    try:
+        if tc_name == "compute_indicators" and not is_error:
+            state.indicators_out = json.loads(content)
+    except Exception:  # noqa: BLE001
+        pass
+
+    try:
+        if tc_name == "get_fundamentals" and not is_error:
+            state.fundamentals_out = json.loads(content)
+    except Exception:  # noqa: BLE001
+        pass
+
 
 # ---------------------------------------------------------------------------
 # Tool execution loop
@@ -215,6 +229,34 @@ def parse_final(text: str) -> MarketBrief:
     Propagates pydantic.ValidationError or ValueError on failure.
     """
     return parse_brief(strip_code_fences(text))
+
+
+def attach_market_data(state: RunState, brief: MarketBrief) -> None:
+    """Overwrite the brief's numeric indicator / 52-week fields with the
+    authoritative tool outputs captured during the run.
+
+    Rules.md: the LLM never owns these numbers. Best-effort — if a tool was not
+    called (e.g. in unit tests), the corresponding fields are left untouched.
+    """
+    if state.indicators_out:
+        ind = state.indicators_out
+        mdd = ind.get("max_drawdown_pct")
+        brief.indicators = {
+            "rsi14": ind.get("rsi14"),
+            "rsi_signal": ind.get("rsi_signal"),
+            "annualized_vol_pct": ind.get("annualized_vol_pct"),
+            # flatten the MaxDrawdown object to its percent value for the chips
+            "max_drawdown_pct": mdd.get("value") if isinstance(mdd, dict) else mdd,
+            "sma20_vs_price": ind.get("sma20_vs_price"),
+            "sma50_vs_price": ind.get("sma50_vs_price"),
+            "volume_trend": ind.get("volume_trend"),
+        }
+
+    if state.fundamentals_out:
+        f = state.fundamentals_out
+        for key in ("low_52w", "high_52w"):
+            if f.get(key) is not None:
+                brief.snapshot[key] = f[key]
 
 
 # ---------------------------------------------------------------------------

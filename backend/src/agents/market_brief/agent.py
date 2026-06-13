@@ -29,6 +29,7 @@ from .events import (
     noop_emitter,
 )
 from .nodes import (
+    attach_market_data,
     call_llm,
     inject_finalize,
     inject_repair,
@@ -141,6 +142,7 @@ def run_agent(
             if response.is_final:
                 try:
                     brief = parse_final(response.text)
+                    attach_market_data(state, brief)
                     break
                 except (ValidationError, ValueError) as exc:
                     if not state.repair_attempted:

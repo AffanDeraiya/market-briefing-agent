@@ -174,7 +174,18 @@
       "change_period": 16.5,
       "market_cap": 4275929874432,
       "pe": 35.203144,
-      "sector": "Technology"
+      "sector": "Technology",
+      "low_52w": 194.87,
+      "high_52w": 315.2
+    },
+    "indicators": {
+      "rsi14": 44.5,
+      "rsi_signal": "neutral",
+      "annualized_vol_pct": 23.1,
+      "max_drawdown_pct": -7.8,
+      "sma20_vs_price": -4.2,
+      "sma50_vs_price": 2.02,
+      "volume_trend": "flat"
     },
     "technical_summary": "Apple (AAPL) shows a neutral RSI-14 of 44.5, with its price currently 4.2% below the 20-day simple moving average but 2.02% above the 50-day simple moving average over the 3-month period [c1]. The annualized volatility stands at 23.1%, and the stock experienced a maximum drawdown of -7.8% from its peak on 2026-06-02 to its trough on 2026-06-09 [c1]. Volume trend has been flat [c1].",
     "anomalies": [

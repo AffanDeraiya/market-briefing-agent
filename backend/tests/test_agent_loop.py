@@ -347,3 +347,54 @@ def test_estimate_cost_unknown_model_zero() -> None:
 
 def test_estimate_cost_zero_tokens() -> None:
     assert estimate_cost_usd("claude-haiku-4-5", 0, 0) == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Test 7 — attach_market_data (deterministic enrichment)
+# ---------------------------------------------------------------------------
+
+
+def test_attach_market_data_populates_indicators_and_52w() -> None:
+    from src.agents.market_brief.nodes import attach_market_data
+    from src.agents.market_brief.state import RunState
+    from src.schemas import parse_brief
+
+    brief = parse_brief(_VALID_BRIEF_DICT)
+    assert brief.indicators == {}  # optional, empty by default
+
+    state = RunState(ticker="AAPL", period="6mo")
+    state.indicators_out = {
+        "sma20_vs_price": -4.2,
+        "sma50_vs_price": 2.02,
+        "rsi14": 44.5,
+        "rsi_signal": "neutral",
+        "annualized_vol_pct": 23.1,
+        "max_drawdown_pct": {"value": -7.8, "peak_date": "2026-06-02", "trough_date": "2026-06-09"},
+        "volume_trend": "flat",
+    }
+    state.fundamentals_out = {"low_52w": 194.87, "high_52w": 315.20, "sector": "Technology"}
+
+    attach_market_data(state, brief)
+
+    # indicators flattened (MaxDrawdown -> its value); LLM never owns these
+    assert brief.indicators["rsi14"] == 44.5
+    assert brief.indicators["rsi_signal"] == "neutral"
+    assert brief.indicators["max_drawdown_pct"] == -7.8
+    assert brief.indicators["volume_trend"] == "flat"
+    # 52-week range merged into snapshot for the range bar
+    assert brief.snapshot["low_52w"] == 194.87
+    assert brief.snapshot["high_52w"] == 315.20
+
+
+def test_attach_market_data_noop_without_tool_outputs() -> None:
+    from src.agents.market_brief.nodes import attach_market_data
+    from src.agents.market_brief.state import RunState
+    from src.schemas import parse_brief
+
+    brief = parse_brief(_VALID_BRIEF_DICT)
+    state = RunState(ticker="AAPL", period="6mo")
+
+    attach_market_data(state, brief)  # nothing captured -> no change, no crash
+
+    assert brief.indicators == {}
+    assert "low_52w" not in brief.snapshot

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -73,6 +73,9 @@ class RunState(BaseModel):
     repair_attempted: bool = False
     # date (ISO YYYY-MM-DD) -> kind; populated after detect_anomalies is called
     anomaly_dates: dict[str, str] = Field(default_factory=dict)
+    # latest structured outputs captured for deterministic brief enrichment
+    fundamentals_out: dict[str, Any] | None = None
+    indicators_out: dict[str, Any] | None = None
 
     def elapsed_s(self) -> float:
         """Seconds elapsed since this RunState was created."""

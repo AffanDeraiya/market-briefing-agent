@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 DISCLAIMER = (
     "Educational project. Not financial advice."
@@ -93,6 +93,11 @@ class MarketBrief(BaseModel):
     as_of: str
     period: str
     snapshot: dict[str, Any]
+    # Structured technical indicators (rsi14, rsi_signal, annualized_vol_pct,
+    # max_drawdown_pct, sma20_vs_price, sma50_vs_price, volume_trend). Attached
+    # deterministically by the backend from compute_indicators — the LLM never
+    # authors these numbers, so the field is optional in the LLM-emitted JSON.
+    indicators: dict[str, Any] = Field(default_factory=dict)
     technical_summary: str
     anomalies: list[Anomaly]
     news_highlights: list[Bullet]
