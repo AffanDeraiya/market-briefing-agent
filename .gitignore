@@ -21,8 +21,11 @@ dist/
 # App runtime
 .cache/
 
-# Claude Code local settings
-.claude/settings.local.json
+# Claude Code (local settings, project skills, agent memory — not part of the repo)
+.claude/
+
+# Design mockups (reference only, not shipped)
+mockups/
 
 # OS / editor
 .DS_Store

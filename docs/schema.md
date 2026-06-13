@@ -125,7 +125,9 @@ class Bullet(BaseModel):
 
 class MarketBrief(BaseModel):
     ticker: str; name: str; as_of: str; period: str
-    snapshot: dict           # price, change_1d/1m/period, market_cap, pe, sector
+    snapshot: dict           # price, change_1d/1m/period, market_cap, pe, sector, low_52w, high_52w
+    indicators: dict         # rsi14, rsi_signal, annualized_vol_pct, max_drawdown_pct,
+                             #   sma20_vs_price, sma50_vs_price, volume_trend
     technical_summary: str   # 2-3 sentences, cites "tool" citations
     anomalies: list[Anomaly]
     news_highlights: list[Bullet]   # ≤5
@@ -137,6 +139,8 @@ class MarketBrief(BaseModel):
 ```
 
 Validation enforced at parse: every citation id referenced exists; bullets outside `anomalies` have ≥1 citation; unknown fields rejected.
+
+`snapshot` and `indicators` are **attached deterministically by the backend from the `get_fundamentals` / `compute_indicators` tool outputs** — the LLM never authors these numbers (rules.md). They feed the UI snapshot bar, indicator chips, and 52-week range bar directly as structured values (never parsed from prose). The chart crosshair reads `chart_data.ohlcv`; the agent-log hover cards read `tool_call.input` + `tool_result.{summary,ms,ok}`; the run-summary card reads `usage`; `anomaly_focus.{date}` joins to `chart_data.anomalies` for magnitude/σ. No other event additions are required for the Investigation Board UI.
 
 ## 5. Eval Data Shapes
 
