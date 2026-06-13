@@ -2,7 +2,7 @@
 
 Update at the end of every working session (rules.md #12). Status: `todo` / `wip` / `done` / `blocked` / `cut`.
 
-**Started:** 2026-06-13  ·  **Target ship:** _(date)_  ·  **Current phase:** 4
+**Started:** 2026-06-13  ·  **Target ship:** _(date)_  ·  **Current phase:** 5 (Phase 4 code-complete)
 
 ## Phase 0 — Scaffold
 - [x] Repo init, layout, license, Makefile
@@ -37,14 +37,16 @@ Update at the end of every working session (rules.md #12). Status: `todo` / `wip
 - [x] Structured run logs — log_run() JSON line on "market_brief.run"
 - [x] 429 verified by test — per-IP and global-cap 429 both tested; /api/health live-checked
 
-## Phase 4 — Frontend Run view  (design finalized: Live Investigation Board)
-- [ ] **Backend follow-up (schema-driven):** attach `snapshot.low_52w/high_52w` + structured `indicators` dict to MarketBrief deterministically (parser + prompt + re-record `aapl_3mo` cassette + tests). Required by the indicator chips / 52w range bar.
-- [ ] SSE client + Zustand store
-- [ ] Home: input + inline validation + chips + period + recent briefs (sessionStorage)
-- [ ] Agent-log strip: tool/anomaly/compose steps, per-step hover cards, run-summary card, budget bar
-- [ ] Board: primary chart (anomaly pin + crosshair + bidirectional hover link), snapshot bar, 52-week range bar
-- [ ] Brief renderer (technical + indicator chips, anomaly, news, bull/bear, risks, citations + popovers) streaming in with skeleton shimmer
-- [ ] Status pill + disclaimer footer + export (Copy MD / download .md)
+## Phase 4 — Frontend Run view  (design finalized: Live Investigation Board)  ✅ CODE-COMPLETE
+- [x] **Backend follow-up (schema-driven):** attach `snapshot.low_52w/high_52w` + structured `indicators` dict to MarketBrief deterministically from tool outputs (no prompt change; cassette hand-updated; 172 backend tests)
+- [x] SSE client (`lib/sse.ts` fetch-stream) + Zustand store (state machine, event reducer, recents)
+- [x] Home: input + inline validation + chips + period + recent briefs (sessionStorage)
+- [x] Agent-log strip: tool/anomaly/compose steps, per-step hover cards, run-summary card, budget bar
+- [x] Board: primary chart (anomaly pin + crosshair + bidirectional hover link), snapshot bar, 52-week range bar
+- [x] Brief renderer (technical + indicator chips, anomaly, news, bull/bear, risks, citations + popovers) streaming in with skeleton shimmer
+- [x] Status pill + disclaimer footer + export (Copy MD / download .md)
+- [x] Live wiring: `startRun()` streams POST /api/brief (demo fallback offline); HTTP contract smoke-tested (health/validate/CORS, no LLM cost)
+- Deferred: one paid live end-to-end SSE run for visual QA (Gemini quota); Recharts migration → Phase 5 (chart currently hand-rolled SVG, pixel-faithful to mockup). 31 frontend tests pass; build+eslint clean.
 
 ## Phase 5 — Chart + polish
 - [ ] Price/volume chart + anomaly markers
@@ -75,6 +77,7 @@ Update at the end of every working session (rules.md #12). Status: `todo` / `wip
 | 2026-06-13 | 2/3 | **Live exit criteria met.** User added backend/.env with a Gemini free-tier key. 1-call auth preflight OK, then ONE live brief (AAPL 3mo, gemini-2.5-flash): streamed the full event protocol, detected the 2026-06-09 -3.6σ drop, auto-scoped a ±3d news search, and explained it (WWDC Siri AI reveal) in a valid fully-cited brief — $0, ~14K tokens, 27s. First cassette saved (`evals/cassettes/aapl_3mo.json`). HTTP layer live-checked (health + validate). Minimal-usage testing as requested (2 LLM calls total). | Gemini key length ~118 chars worked fine. SSE /api/brief not re-run live to conserve free-tier quota — identical run_agent path. |
 | 2026-06-13 | 3 | **Phase 3 code-complete.** FastAPI API layer: `POST /api/brief` streams the agent over SSE via a sync→async bridge (agent runs in a worker thread, emits through an asyncio.Queue); `GET /api/validate/{ticker}` cheap existence check; `GET /api/health` shows live daily-remaining. Guards: slowapi per-IP hourly limit (callable rate string, test-overridable), thread-safe global `DailyCounter` (UTC-day reset), ticker regex, structured JSON run log. `create_app()` factory + 429 handler. **170 tests pass** (per-IP + global-cap 429 both covered), ruff+mypy strict clean. | Live SSE curl smoke deferred with the Phase 2 live run (needs API key). Sonnet 4.6 subagent built the api/ package from Opus spec; no type-ignores needed. |
 | 2026-06-13 | 4 | **UI design finalized: Live Investigation Board.** After 3 mockup rounds (12 variants across `mockups.html` / `_v2` / `_v3`), user picked the Investigation Board (was variant I) — light warm-paper, no sidebar, chart-primary, brief assembles inline. Installed the `taste-skill` design skills project-locally (`.claude/skills/`). Built refined canonical reference `mockups/investigation_board.html` (Opus): agent-log strip with per-step hover detail cards + run-summary card + budget bar; chart anomaly pin + crosshair + bidirectional hover link; styled citation popovers. Per user vote, added indicator chips, 52-week range bar, chart crosshair, skeleton-shimmer streaming, Markdown export, recent-briefs-on-Home; light-only for v1. Rewrote `design.md` + `webapp_flow.md` to the new layout; extended `schema.md` MarketBrief with `snapshot.low_52w/high_52w` + structured `indicators` (deterministically attached). Mockup verified headless (jsdom, 0 errors). | Next session: run the phase goal to build Phase 4 against this design. Backend must add the structured snapshot/indicator fields first (logged as Phase 4 item 1). |
+| 2026-06-13 | 4 | **Phase 4 code-complete (Investigation Board frontend).** Backend: deterministic `indicators` + `snapshot.low_52w/high_52w` enrichment attached from tool outputs (172 tests). Frontend (React 18 + TS strict + Tailwind v4 + Zustand): full Run view — agent-log strip with hover detail + run-summary cards + budget bar, chart with anomaly pin + crosshair + bidirectional hover link, snapshot bar, 52w range bar, indicator chips, brief sections 01–06 streaming with skeleton shimmer, citation popovers, status pill, Copy-MD/Export, Home with recents. Real SSE wired (`startRun` → POST /api/brief) with offline demo fallback; HTTP contract smoke-tested (health/validate/CORS, zero LLM cost). 31 FE tests, build+eslint clean. 4 commits this session. | Coding delegated to Sonnet 4.6 subagents (chart deviated to hand-rolled SVG → Recharts deferred to Phase 5); Opus did backend enrichment + decisions + verification + commits. mockups/ + .claude/ now gitignored. |
 | 2026-06-13 | 2 | **Phase 2 code-complete.** src/llm.py provider adapter (Anthropic native + OpenAI-compat Gemini/Groq, normalized Turn/ToolCall/ToolSpec/LLMResponse, defensive arg parsing). src/schemas.py MarketBrief + strict parser (citation resolution, uncited-bullet rejection, list caps, immutable disclaimer). Agent internals: tools.py (7-tool registry, 10s timeout), state.py RunState + budgets, prompts.py system prompt v1, nodes.py + agent.py hand-rolled loop (finalize-now, one repair round-trip, usage/cost), events.py emitter, cassette.py recorder. `make brief` + .env autoload. **162 tests pass, ruff+mypy strict clean.** | Live `make brief` + first cassette deferred — no GEMINI_API_KEY available this session; user chose to proceed to Phase 3. 4 Sonnet 4.6 subagents wrote schemas/llm/tools+state/loop from Opus specs; Opus wrote prompts.py by hand. |
 
 ## Decisions Log
