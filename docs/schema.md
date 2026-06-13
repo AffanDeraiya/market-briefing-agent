@@ -142,8 +142,15 @@ Validation enforced at parse: every citation id referenced exists; bullets outsi
 
 ### Fixture labels (`evals/fixtures/labels.json`)
 ```json
-{"AAPL_1y": {"expected_anomalies": [{"date": "2025-08-01", "kind": "price_drop"}]}}
+{"AAPL_1y": {"ticker": "AAPL",
+             "anomalies": [{"date": "2025-08-06", "kind": "price_spike",
+                            "severity": "high", "magnitude": "+5.1% (3.6σ)"}]}}
 ```
+Keys starting with `_` (e.g. `_about`) are metadata, ignored by the harness. Each
+fixture entry lists the **full** expected detector output in detector order (high
+severity first, newest-first within severity). The regression test asserts the
+detector reproduces `(date, kind, severity)` exactly; `magnitude` is documentation.
+This locks the detector's sort/truncate behavior, not just which days fire.
 
 ### Cassette (`evals/cassettes/<run_id>.json`)
 ```json
