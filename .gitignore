@@ -20,6 +20,7 @@ dist/
 
 # App runtime
 .cache/
+*.log
 
 # Claude Code (local settings, project skills, agent memory — not part of the repo)
 .claude/
