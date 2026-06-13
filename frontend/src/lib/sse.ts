@@ -10,6 +10,21 @@ export interface BriefRequest {
   period: Period;
 }
 
+/** Typed error thrown by streamBrief for non-2xx HTTP responses. */
+export class BriefStreamError extends Error {
+  /** HTTP status code (undefined if the request never got a response — network/connect error). */
+  readonly status?: number;
+  /** Retry-After header value in seconds, if the server sent one (429 rate-limit). */
+  readonly retryAfter?: number;
+
+  constructor(message: string, status?: number, retryAfter?: number) {
+    super(message);
+    this.name = 'BriefStreamError';
+    this.status = status;
+    this.retryAfter = retryAfter;
+  }
+}
+
 export async function streamBrief(
   req: BriefRequest,
   onEvent: (ev: BriefEvent) => void,
@@ -23,7 +38,13 @@ export async function streamBrief(
   });
 
   if (!resp.ok) {
-    throw new Error(`HTTP ${resp.status}`);
+    let retryAfter: number | undefined;
+    const ra = resp.headers.get('Retry-After');
+    if (ra) {
+      const parsed = parseInt(ra, 10);
+      if (!isNaN(parsed)) retryAfter = parsed;
+    }
+    throw new BriefStreamError(`HTTP ${resp.status}`, resp.status, retryAfter);
   }
 
   const reader = resp.body?.getReader();

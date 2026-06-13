@@ -348,6 +348,39 @@
     color: var(--anom);
   }
 
+  /* Collapsed one-line summary bar (success state) */
+  .strip-collapsed {
+    min-height: 35px;
+  }
+
+  .strip-summary {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    color: #7a8fa0;
+    font: 500 10.5px 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    gap: 0;
+  }
+
+  .strip-summary:hover {
+    color: #cdddea;
+  }
+
+  .strip-summary .expand-hint {
+    color: #4a7fb0;
+    margin-left: 2px;
+  }
+
+  .strip-summary .expand-hint:hover {
+    text-decoration: underline;
+  }
+
   /* Live budget bar under the strip */
   .budgetbar {
     height: 3px;
@@ -1227,6 +1260,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    /* Disable all animations */
     .skel-veil::after,
     .anom-dot.pulse,
     .pill.running .dot,
@@ -1234,8 +1268,28 @@
       animation: none;
     }
 
-    .tl-item {
+    /* Skeleton shimmer: make the veil invisible instantly instead of shimming */
+    .skel-veil {
       transition: none;
+    }
+
+    /* No slide/transition for log items — instant render */
+    .tl-item,
+    .st,
+    .pop,
+    .cite .cpop,
+    .budgetbar i,
+    .home .inp,
+    .actions button,
+    .recents .rcard,
+    .anom-panel {
+      transition: none;
+    }
+
+    /* Skeleton shimmer: freeze the gradient in place */
+    .skel-veil::after {
+      transform: translateX(0);
+      opacity: 0;
     }
   }
 }

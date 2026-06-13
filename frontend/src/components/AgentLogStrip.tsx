@@ -1,5 +1,6 @@
 // Agent-log strip — sticky dark navy bar showing tool steps with hover cards.
 
+import { useState } from 'react';
 import type { LogStep, UsagePayload } from '../lib/types';
 import { TOOL_DESCRIPTIONS } from '../lib/demoFixture';
 
@@ -163,12 +164,50 @@ function deduplicateLog(log: LogStep[]): LogStep[] {
 }
 
 export function AgentLogStrip({ log, usage, status, model }: Props) {
+  // When status is 'success', collapse to a one-line summary bar by default.
+  // User can click to re-expand.
+  const isSuccess = status === 'success';
+  const [expanded, setExpanded] = useState(false);
+
   const displayLog = deduplicateLog(log);
   const toolCallCount = log.filter((s) => s.type === 'tool_call').length;
   const budgetPct = Math.round((toolCallCount / MAX_TOOL_CALLS) * 100);
 
   const totalTokens = usage ? ((usage.input_tokens + usage.output_tokens) / 1000).toFixed(1) + 'k' : '—';
   const latencyS = usage ? (usage.latency_ms / 1000).toFixed(0) + 's' : status === 'streaming' ? '…' : '—';
+  const costStr = usage
+    ? usage.est_cost_usd === 0
+      ? '$0.00'
+      : '$' + usage.est_cost_usd.toFixed(4)
+    : null;
+
+  // Collapsed one-line summary bar shown when success and not expanded
+  if (isSuccess && !expanded) {
+    return (
+      <>
+        <div
+          className="strip strip-collapsed"
+          role="region"
+          aria-label="Agent log summary"
+        >
+          <span className="strip-label">
+            <span className="lp" aria-hidden="true" style={{ background: '#6ab88a' }} />
+            agent log
+          </span>
+          <button
+            className="strip-summary"
+            onClick={() => setExpanded(true)}
+            aria-label="Expand agent log"
+          >
+            ✓ {toolCallCount} tool calls · {latencyS}{costStr ? ` · ${costStr}` : ''} · <span className="expand-hint">expand</span>
+          </button>
+        </div>
+        <div className="budgetbar" role="progressbar" aria-valuenow={100} aria-valuemin={0} aria-valuemax={100}>
+          <i style={{ width: `${budgetPct}%` }} />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -234,6 +273,21 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
           <span className="sv mono">{toolCallCount}/{MAX_TOOL_CALLS}</span> tools{' '}
           <span className="sv mono">{totalTokens}</span> tok{' '}
           <span className="sv mono">{latencyS}</span>
+          {isSuccess && (
+            <button
+              onClick={() => setExpanded(false)}
+              style={{
+                marginLeft: 8,
+                fontSize: 10,
+                color: '#7a8fa0',
+                fontFamily: 'JetBrains Mono',
+                cursor: 'pointer',
+              }}
+              aria-label="Collapse agent log"
+            >
+              collapse
+            </button>
+          )}
           {usage && <RunSummaryCard usage={usage} model={model} />}
         </div>
       </div>

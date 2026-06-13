@@ -8,6 +8,16 @@ import type { BriefEvent } from '../lib/types';
 // Mock the sse module before importing the store
 vi.mock('../lib/sse', () => ({
   streamBrief: vi.fn(),
+  BriefStreamError: class BriefStreamError extends Error {
+    status?: number;
+    retryAfter?: number;
+    constructor(message: string, status?: number, retryAfter?: number) {
+      super(message);
+      this.name = 'BriefStreamError';
+      this.status = status;
+      this.retryAfter = retryAfter;
+    }
+  },
 }));
 
 // Import the mocked function after vi.mock

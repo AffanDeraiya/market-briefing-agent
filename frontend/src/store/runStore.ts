@@ -10,7 +10,7 @@ import type {
   Period,
 } from '../lib/types';
 import { DEMO_EVENTS, DEMO_BRIEF, DEMO_CHART_DATA } from '../lib/demoFixture';
-import { streamBrief } from '../lib/sse';
+import { streamBrief, BriefStreamError } from '../lib/sse';
 
 export type RunStatus =
   | 'idle'
@@ -18,7 +18,9 @@ export type RunStatus =
   | 'streaming'
   | 'success'
   | 'error'
-  | 'stopped';
+  | 'stopped'
+  | 'rate_limited'
+  | 'server_waking';
 
 export interface RecentBrief {
   ticker: string;
@@ -27,6 +29,7 @@ export interface RecentBrief {
   change_1d: number;
   as_of: string;
   brief: MarketBrief;
+  chartData?: ChartDataPayload;
 }
 
 const RECENTS_KEY = 'mba.recents';
@@ -60,6 +63,8 @@ export interface RunState {
   // State machine
   status: RunStatus;
   error: string | null;
+  /** Seconds until rate-limit resets (from Retry-After header), if present. */
+  retryAfterS: number | null;
 
   // Live data
   log: LogStep[];
@@ -96,6 +101,7 @@ export const useRunStore = create<RunState>((set, get) => ({
   model: '',
   status: 'idle',
   error: null,
+  retryAfterS: null,
   log: [],
   chartData: null,
   brief: null,
@@ -118,6 +124,7 @@ export const useRunStore = create<RunState>((set, get) => ({
       brief: null,
       usage: null,
       error: null,
+      retryAfterS: null,
       hoveredAnomaly: null,
       name: '',
       model: '',
@@ -207,9 +214,9 @@ export const useRunStore = create<RunState>((set, get) => ({
 
       case 'usage':
         set({ usage: ev.data, status: 'success' });
-        // Save to recents
+        // Save to recents (including chartData so loadRecent can fully restore)
         {
-          const { brief: b, ticker, name, period } = get();
+          const { brief: b, ticker, name, period, chartData: cd } = get();
           if (b) {
             const entry: RecentBrief = {
               ticker,
@@ -218,6 +225,7 @@ export const useRunStore = create<RunState>((set, get) => ({
               change_1d: b.snapshot.change_1d,
               as_of: b.as_of,
               brief: b,
+              chartData: cd ?? undefined,
             };
             const recents = [entry, ...loadRecents().filter((r) => r.ticker !== ticker)].slice(
               0,
@@ -230,7 +238,14 @@ export const useRunStore = create<RunState>((set, get) => ({
         break;
 
       case 'error':
-        set({ status: 'error', error: ev.data.message });
+        // budget exhaustion gets its own dedicated status so the UI can
+        // render a specific message (GitHub link etc.) without needing to
+        // parse the error string.
+        if (ev.data.kind === 'budget') {
+          set({ status: 'error', error: '__budget__' });
+        } else {
+          set({ status: 'error', error: ev.data.message });
+        }
         break;
     }
   },
@@ -300,18 +315,54 @@ export const useRunStore = create<RunState>((set, get) => ({
       brief: null,
       usage: null,
       error: null,
+      retryAfterS: null,
       hoveredAnomaly: null,
     });
 
-    streamBrief({ ticker, period }, (ev) => get().applyEvent(ev), controller.signal).catch(
-      (e: unknown) => {
-        if (controller.signal.aborted) return;
-        set({
-          status: 'error',
-          error: e instanceof Error ? e.message : 'stream failed',
-        });
-      }
-    );
+    const doStream = (isRetry: boolean): Promise<void> =>
+      streamBrief({ ticker, period }, (ev) => get().applyEvent(ev), controller.signal).catch(
+        (e: unknown) => {
+          if (controller.signal.aborted) return;
+
+          // 429 rate-limit
+          if (e instanceof BriefStreamError && e.status === 429) {
+            set({
+              status: 'rate_limited',
+              error: null,
+              retryAfterS: e.retryAfter ?? null,
+            });
+            return;
+          }
+
+          // Network/connect error (no HTTP response) — server may be cold-starting
+          const isNetworkError =
+            !(e instanceof BriefStreamError) &&
+            e instanceof Error &&
+            (e.message === 'Failed to fetch' ||
+              e.message === 'Load failed' ||
+              e.name === 'TypeError');
+
+          if (isNetworkError && !isRetry) {
+            // Show server-waking state, auto-retry once after 5s
+            set({ status: 'server_waking', error: null });
+            const id = setTimeout(() => {
+              if (controller.signal.aborted) return;
+              // Reset to streaming before the retry
+              set({ status: 'streaming' });
+              void doStream(true);
+            }, 5000);
+            demoTimeoutIds.push(id);
+            return;
+          }
+
+          set({
+            status: 'error',
+            error: e instanceof Error ? e.message : 'stream failed',
+          });
+        }
+      );
+
+    void doStream(false);
   },
 
   loadRecent: (r: RecentBrief) => {
@@ -320,6 +371,7 @@ export const useRunStore = create<RunState>((set, get) => ({
       name: r.name,
       period: r.period,
       status: 'success',
+      retryAfterS: null,
       log: DEMO_EVENTS.filter(
         (e) =>
           e.event === 'tool_call' ||
@@ -371,7 +423,7 @@ export const useRunStore = create<RunState>((set, get) => ({
           thinking: sd.thinking,
         };
       }),
-      chartData: DEMO_CHART_DATA,
+      chartData: r.chartData ?? DEMO_CHART_DATA,
       brief: r.brief,
       usage: {
         input_tokens: 11200,
@@ -386,6 +438,7 @@ export const useRunStore = create<RunState>((set, get) => ({
     });
   },
 }));
+
 
 // Re-export for convenience
 export { DEMO_BRIEF, MAX_TOOL_CALLS };

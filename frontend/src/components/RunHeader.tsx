@@ -1,4 +1,5 @@
 // Run header — sticky bar with ticker, meta pill, actions, status pill.
+import { useState } from 'react';
 import { useRunStore } from '../store/runStore';
 import type { RunStatus } from '../store/runStore';
 import type { MarketBrief } from '../lib/types';
@@ -72,11 +73,34 @@ function StatusPill({ status, latencyS, onStop }: { status: RunStatus; latencyS?
       </span>
     );
   }
+  if (status === 'rate_limited') {
+    return (
+      <span
+        className="pill"
+        style={{ color: 'var(--anom)', borderColor: 'rgba(138,90,0,.25)', background: 'rgba(138,90,0,.07)' }}
+      >
+        <span className="dot" style={{ background: 'var(--anom)' }} aria-hidden="true" />
+        Rate limited
+      </span>
+    );
+  }
+  if (status === 'server_waking') {
+    return (
+      <span
+        className="pill running"
+        style={{ color: 'var(--ts)', borderColor: 'var(--bd)', background: 'var(--raised)' }}
+      >
+        <span className="dot" style={{ background: 'var(--ts)' }} aria-hidden="true" />
+        Waking…
+      </span>
+    );
+  }
   return null;
 }
 
 export function RunHeader({ ticker, name, exchange, period, status, brief, latencyS, onStop }: Props) {
   const stopRun = useRunStore((s) => s.stopRun);
+  const [copied, setCopied] = useState(false);
 
   const handleCopyMd = async () => {
     if (!brief) return;
@@ -91,6 +115,8 @@ export function RunHeader({ ticker, name, exchange, period, status, brief, laten
       document.execCommand('copy');
       document.body.removeChild(el);
     }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
   };
 
   const handleExport = () => {
@@ -100,7 +126,8 @@ export function RunHeader({ ticker, name, exchange, period, status, brief, laten
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${brief.ticker}-brief-${brief.as_of}.md`;
+    // e.g. "AAPL-3mo-brief.md"
+    a.download = `${brief.ticker}-${brief.period}-brief.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -116,7 +143,7 @@ export function RunHeader({ ticker, name, exchange, period, status, brief, laten
       <div className="spacer" />
       <div className="actions">
         <button onClick={handleCopyMd} title="Copy the brief as Markdown" disabled={!brief}>
-          ⧉ Copy MD
+          {copied ? '✓ Copied' : '⧉ Copy MD'}
         </button>
         <button onClick={handleExport} title="Download the brief as a .md file" disabled={!brief}>
           ↓ Export
