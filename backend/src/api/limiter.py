@@ -1,0 +1,10 @@
+"""Singleton slowapi Limiter — imported by both main.py and routes.py."""
+
+from __future__ import annotations
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+__all__ = ["limiter"]
+
+limiter = Limiter(key_func=get_remote_address)
