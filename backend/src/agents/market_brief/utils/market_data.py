@@ -8,6 +8,7 @@ The 10s tool timeout is enforced by the tool executor (Phase 2), not here —
 yfinance does not expose a reliable per-request timeout.
 """
 
+import contextlib
 import json
 import math
 import os
@@ -81,6 +82,27 @@ def _is_fresh(path: Path) -> bool:
     return path.exists() and (time.time() - path.stat().st_mtime) < CACHE_TTL_HOURS * 3600
 
 
+def _evict_cache_if_needed() -> None:
+    """Best-effort LRU eviction: delete oldest files when the cache exceeds MAX_CACHE_FILES.
+
+    Called after each cache-miss write in fetch_ohlcv / fetch_info.  Never
+    raises — eviction failure is non-fatal and must not break the caller.
+    """
+    try:
+        max_files = int(os.environ.get("MAX_CACHE_FILES", "200"))
+        d = cache_dir()
+        files = list(d.iterdir())
+        if len(files) <= max_files:
+            return
+        # Sort oldest-first by modification time, delete until within cap.
+        files.sort(key=lambda p: p.stat().st_mtime)
+        for f in files[: len(files) - max_files]:
+            with contextlib.suppress(OSError):
+                f.unlink(missing_ok=True)  # best-effort
+    except Exception:  # noqa: BLE001
+        pass  # eviction is never allowed to raise
+
+
 def fetch_ohlcv(ticker: str, period: Period) -> pd.DataFrame:
     """OHLCV frame for ticker/period, cached on disk for 24h."""
     cached = cache_dir() / f"{ticker.upper()}_{period}.parquet"
@@ -97,6 +119,8 @@ def fetch_ohlcv(ticker: str, period: Period) -> pd.DataFrame:
         idx = idx.tz_localize(None)
     df.index = idx.normalize()
     df.to_parquet(cached)
+    # Evict old cache entries AFTER writing so the new file is always kept.
+    _evict_cache_if_needed()
     return df
 
 
@@ -113,6 +137,8 @@ def fetch_info(ticker: str) -> dict[str, Any]:
         info = {}
     if info:
         cached.write_text(json.dumps(info), encoding="utf-8")
+        # Evict old cache entries AFTER writing so the new file is always kept.
+        _evict_cache_if_needed()
     return info
 
 

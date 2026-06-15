@@ -1,7 +1,7 @@
 # Market Briefing Agent — dev targets (techspec §9)
 # Requires: uv (backend), npm (frontend), gitleaks (pre-commit)
 
-.PHONY: setup dev dev-backend dev-frontend lint test lint-backend lint-frontend test-backend test-frontend brief eval eval-live
+.PHONY: setup dev dev-backend dev-frontend serve-prod lint test lint-backend lint-frontend test-backend test-frontend brief eval eval-live
 
 # Run the agent end-to-end from the CLI (reads backend/.env for the LLM key).
 #   make brief TICKER=AAPL PERIOD=3mo
@@ -23,6 +23,11 @@ dev:
 
 dev-backend:
 	cd backend && uv run uvicorn src.main:app --reload --port 8000
+
+# Production server: passes --proxy-headers so uvicorn populates request.client.host
+# from X-Forwarded-For when running behind Render/Vercel/nginx.  See main.py docstring.
+serve-prod:
+	cd backend && uv run uvicorn src.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'
 
 dev-frontend:
 	cd frontend && npm run dev

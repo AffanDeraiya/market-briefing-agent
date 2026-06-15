@@ -45,7 +45,12 @@ from .state import (
 )
 from .tools import tool_specs
 
-__all__ = ["RunResult", "run_agent"]
+__all__ = ["RunResult", "run_agent", "CLIENT_SAFE_KINDS"]
+
+# Error kinds whose messages are safe to surface directly to clients.
+# All other kinds get a generic message in the emitted SSE event; the
+# full detail is still preserved in RunResult.error for server-side logging.
+CLIENT_SAFE_KINDS: frozenset[str] = frozenset({"validation", "budget", "timeout", "parse"})
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +183,15 @@ def run_agent(
     if brief is not None:
         _emit(EVENT_BRIEF, brief.model_dump(mode="json"))
     elif error is not None:
-        _emit(EVENT_ERROR, {"kind": error[0], "message": error[1]})
+        kind, detail = error
+        # Only expose message detail for well-understood, client-safe error kinds.
+        # Internal / upstream errors get a generic message so that stack traces,
+        # third-party service names, etc. are not leaked to the client.
+        # The full detail remains in RunResult.error for server-side logging.
+        client_message = (
+            detail if kind in CLIENT_SAFE_KINDS else "An internal error occurred. Please try again."
+        )
+        _emit(EVENT_ERROR, {"kind": kind, "message": client_message})
     _emit(EVENT_USAGE, usage)
 
     if recorder is not None:

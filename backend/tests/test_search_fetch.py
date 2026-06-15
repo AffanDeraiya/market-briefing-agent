@@ -119,7 +119,8 @@ def test_fetch_page_extracts_and_truncates(monkeypatch: pytest.MonkeyPatch) -> N
     page = fetch.fetch_page("https://x.example/article")
     assert "Quarterly Results" in page.title
     assert page.text.endswith("[truncated]")
-    assert len(page.text) <= fetch._MAX_CHARS + len("\n[truncated]")
+    # text = untrusted-content prefix + capped article body + truncation marker
+    assert len(page.text) <= len(fetch._UNTRUSTED_PREFIX) + fetch._MAX_CHARS + len("\n[truncated]")
 
 
 def test_fetch_page_no_article_raises(monkeypatch: pytest.MonkeyPatch) -> None:

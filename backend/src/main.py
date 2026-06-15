@@ -1,11 +1,24 @@
-"""App entry: ties agents + API together (techspec §9)."""
+"""App entry: ties agents + API together (techspec §9).
+
+Proxy-header note (fix #4)
+--------------------------
+When deployed behind a trusted reverse proxy (Render, Vercel, nginx, etc.)
+the real client IP arrives in the X-Forwarded-For header.  Uvicorn must be
+started with ``--proxy-headers --forwarded-allow-ips='*'`` so that Starlette
+populates ``request.client.host`` (and therefore ``get_remote_address``) with
+the forwarded IP rather than the proxy's own address.
+
+Use the ``make serve-prod`` Makefile target, which passes these flags
+automatically.  Never use this flag set in development when there is no
+trusted proxy in front, as it allows clients to spoof their IP.
+"""
 
 from __future__ import annotations
 
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
@@ -47,6 +60,19 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # ── Security headers (fix #9) ─────────────────────────────────────────
+    # Applied to every response.  CSP is intentionally omitted: the backend
+    # serves JSON/SSE plus /docs (Swagger UI), and a CSP would break Swagger.
+    @_app.middleware("http")
+    async def add_security_headers(request: Request, call_next: object) -> Response:
+        response: Response = await call_next(request)  # type: ignore[operator]
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        return response
 
     _app.state.limiter = limiter
     _app.add_exception_handler(RateLimitExceeded, _rate_limit_handler)
