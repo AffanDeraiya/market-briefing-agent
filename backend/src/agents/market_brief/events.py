@@ -9,7 +9,9 @@ rather than using raw strings.
 
 from __future__ import annotations
 
+import contextlib
 import json
+import sys
 from collections.abc import Callable
 from typing import Any
 
@@ -79,7 +81,14 @@ def _fmt(data: dict[str, Any]) -> str:
 
 
 def make_stdout_emitter() -> Emitter:
-    """Return an Emitter that prints a concise one-line summary per event."""
+    """Return an Emitter that prints a concise one-line summary per event.
+
+    Windows consoles default to cp1252; agent output legitimately contains
+    non-cp1252 characters (e.g. the σ in "-3.6σ", arrows). Make stdout tolerant
+    so a console-encoding error can never propagate up and abort an agent run.
+    """
+    with contextlib.suppress(Exception):
+        sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")  # type: ignore[union-attr]
 
     def _emit(event_type: str, data: dict[str, Any]) -> None:
         if event_type == EVENT_TOOL_CALL:

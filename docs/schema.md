@@ -16,6 +16,8 @@ RECEIVE {ticker, period}
       │     (tool budget exceeded? → inject "finalize now" user msg)
       └─ response.is_final:
             parse final text as MarketBrief
+            (grounding guard: drop any news/web citation whose URL was never
+             returned by a tool; repair the references — see below)
             ├─ ok → emit brief, usage → DONE
             └─ parse error → one repair round-trip → ok|FAIL
   → any exception / run timeout → emit error → DONE
@@ -139,6 +141,8 @@ class MarketBrief(BaseModel):
 ```
 
 Validation enforced at parse: every citation id referenced exists; bullets outside `anomalies` have ≥1 citation; unknown fields rejected.
+
+**Citation grounding (enforced at finalize).** Before validation, `parse_final` rejects any `news`/`web` citation whose `url` was not seen in a tool result during the run (the run tracks `seen_urls` from every tool output; the check mirrors the eval's `grounded_urls`). This deterministically blocks fabricated source URLs — a real failure mode of weaker free-tier models. References are repaired, not just dropped: a bullet left with only ungrounded citations is removed entirely, and an anomaly that loses all support falls back to `confidence: "low"` with a "No public cause could be confirmed from the retrieved sources." explanation (rules.md: "no clear public cause found" beats an invented one). `kind: "tool"` citations are always grounded.
 
 `snapshot` and `indicators` are **attached deterministically by the backend from the `get_fundamentals` / `compute_indicators` tool outputs** — the LLM never authors these numbers (rules.md). They feed the UI snapshot bar, indicator chips, and 52-week range bar directly as structured values (never parsed from prose). The chart crosshair reads `chart_data.ohlcv`; the agent-log hover cards read `tool_call.input` + `tool_result.{summary,ms,ok}`; the run-summary card reads `usage`; `anomaly_focus.{date}` joins to `chart_data.anomalies` for magnitude/σ. No other event additions are required for the Investigation Board UI.
 

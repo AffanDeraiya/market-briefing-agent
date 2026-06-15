@@ -13,8 +13,6 @@ from datetime import date
 from typing import Any
 from uuid import uuid4
 
-_log = logging.getLogger("market_brief.agent")
-
 from pydantic import ValidationError
 
 from src.llm import LLMBackend, Turn
@@ -58,12 +56,16 @@ from .state import (
 )
 from .tools import tool_specs
 
+_log = logging.getLogger("market_brief.agent")
+
 __all__ = ["RunResult", "run_agent", "CLIENT_SAFE_KINDS"]
 
 # Error kinds whose messages are safe to surface directly to clients.
 # All other kinds get a generic message in the emitted SSE event; the
 # full detail is still preserved in RunResult.error for server-side logging.
-CLIENT_SAFE_KINDS: frozenset[str] = frozenset({"validation", "budget", "timeout", "parse", "upstream"})
+CLIENT_SAFE_KINDS: frozenset[str] = frozenset(
+    {"validation", "budget", "timeout", "parse", "upstream"}
+)
 
 
 # ---------------------------------------------------------------------------
@@ -114,7 +116,13 @@ def run_agent(
     # Wrap the backend in a RecordingBackend if a cassette recorder was provided.
     _backend: LLMBackend = RecordingBackend(backend, recorder) if recorder is not None else backend
 
-    _log.info("[run_start] ticker=%s period=%s model=%s run_id=%s", ticker, period, _backend.model, run_id)
+    _log.info(
+        "[run_start] ticker=%s period=%s model=%s run_id=%s",
+        ticker,
+        period,
+        _backend.model,
+        run_id,
+    )
 
     state = RunState(ticker=ticker, period=period)  # type: ignore[arg-type]
     state.history.append(Turn(role="user", text=build_user_message(ticker, period, _today)))
@@ -171,9 +179,11 @@ def run_agent(
 
             # ── Final response branch ─────────────────────────────────────
             if response.is_final:
-                _log.info("[iteration %d] final response received, attempting parse", state.iterations)
+                _log.info(
+                    "[iteration %d] final response received, attempting parse", state.iterations
+                )
                 try:
-                    brief = parse_final(response.text)
+                    brief = parse_final(response.text, state.seen_urls)
                     attach_market_data(state, brief)
                     _log.info("[run_ok] brief parsed successfully")
                     break
@@ -202,12 +212,14 @@ def run_agent(
         # Surface provider rate-limit errors as 'upstream' so the client sees a useful
         # message instead of the generic "An internal error occurred." fallback.
         _is_rate_limit = (
-            (_OpenAIRateLimitError is not None and isinstance(exc, _OpenAIRateLimitError))
-            or (_AnthropicRateLimitError is not None and isinstance(exc, _AnthropicRateLimitError))
-        )
+            _OpenAIRateLimitError is not None and isinstance(exc, _OpenAIRateLimitError)
+        ) or (_AnthropicRateLimitError is not None and isinstance(exc, _AnthropicRateLimitError))
         if _is_rate_limit:
             _log.warning("[rate_limit] provider returned 429: %s", str(exc)[:300])
-            error = ("upstream", "LLM provider rate limit reached. Please wait a few minutes and try again.")
+            error = (
+                "upstream",
+                "LLM provider rate limit reached. Please wait a few minutes and try again.",
+            )
         else:
             _log.exception("[unhandled] %s: %s", type(exc).__name__, exc)
             error = ("internal", f"{type(exc).__name__}: {exc}")

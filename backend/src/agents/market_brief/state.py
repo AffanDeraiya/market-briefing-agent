@@ -73,6 +73,9 @@ class RunState(BaseModel):
     repair_attempted: bool = False
     # date (ISO YYYY-MM-DD) -> kind; populated after detect_anomalies is called
     anomaly_dates: dict[str, str] = Field(default_factory=dict)
+    # every URL seen in any tool result; used to reject ungrounded (fabricated)
+    # news/web citations before the brief is finalized (rules.md: every claim cited)
+    seen_urls: set[str] = Field(default_factory=set)
     # latest structured outputs captured for deterministic brief enrichment
     price_history_out: dict[str, Any] | None = None
     indicators_out: dict[str, Any] | None = None

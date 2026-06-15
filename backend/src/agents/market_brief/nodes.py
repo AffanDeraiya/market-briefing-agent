@@ -10,6 +10,7 @@ best-effort: they MUST NOT propagate exceptions out of the loop.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import re
@@ -18,8 +19,6 @@ from typing import TYPE_CHECKING, Any
 
 from src.llm import LLMBackend, LLMResponse, ToolResult, ToolSpec, Turn
 from src.schemas import MarketBrief, parse_brief
-
-_log = logging.getLogger("market_brief.nodes")
 
 from .events import (
     EVENT_ANOMALY_FOCUS,
@@ -31,6 +30,8 @@ from .events import (
 from .prompts import FINALIZE_NOW_MESSAGE, build_repair_message
 from .state import RunState
 from .tools import execute_tool
+
+_log = logging.getLogger("market_brief.nodes")
 
 if TYPE_CHECKING:
     from .cassette import CassetteRecorder
@@ -154,6 +155,13 @@ def _post_tool_side_effects(
     emit: Emitter,
 ) -> None:
     """Apply state side effects and supplementary events after a tool returns."""
+    # Record every URL this tool surfaced so the finalizer can reject any
+    # news/web citation that was never actually retrieved (mirrors the eval's
+    # grounded_urls). Applies to all tools; search/fetch_page are the sources.
+    if not is_error:
+        with contextlib.suppress(Exception):
+            state.seen_urls |= _collect_urls(json.loads(content))
+
     try:
         if tc_name == "detect_anomalies" and not is_error:
             data = json.loads(content)
@@ -213,7 +221,9 @@ def run_tool_calls(
         content, is_error = execute_tool(tc.name, tc.input)
         ms = int((time.monotonic() - t0) * 1000)
 
-        _log.info("[tool_result #%d] %s | ok=%s ms=%d | %s", seq, tc.name, not is_error, ms, content[:200])
+        _log.info(
+            "[tool_result #%d] %s | ok=%s ms=%d | %s", seq, tc.name, not is_error, ms, content[:200]
+        )
         if is_error:
             _log.warning("[tool_error #%d] %s: %s", seq, tc.name, content[:400])
 
@@ -290,11 +300,122 @@ def _fixup_brief_dict(data: dict[str, Any]) -> dict[str, Any]:
     return {**data, "citations": fixed}
 
 
-def parse_final(text: str) -> MarketBrief:
+# Honest fallback when an anomaly's only support was an ungrounded citation.
+_NO_CAUSE_EXPLANATION = "No public cause could be confirmed from the retrieved sources."
+
+
+def _collect_urls(obj: Any) -> set[str]:
+    """Recursively collect non-empty string values under any key named ``"url"``.
+
+    Mirrors evals.checks.grounded_urls so the runtime grounding guard and the
+    offline faithfulness metric agree on exactly what counts as "retrieved".
+    """
+    found: set[str] = set()
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if key == "url" and isinstance(value, str) and value:
+                found.add(value)
+            else:
+                found |= _collect_urls(value)
+    elif isinstance(obj, list):
+        for item in obj:
+            found |= _collect_urls(item)
+    return found
+
+
+def _enforce_citation_grounding(data: dict[str, Any], seen_urls: set[str]) -> dict[str, Any]:
+    """Drop any news/web citation whose URL was never returned by a tool.
+
+    rules.md: every claim is cited to a *real* tool result/URL, and "no clear
+    public cause found" beats an invented explanation. A model can hallucinate a
+    plausible-looking source URL; this STRENGTHENS the citation guarantee by
+    removing such citations deterministically and repairing the references:
+      * bullets left with only fabricated citations are dropped entirely;
+      * an anomaly that loses all support falls back to low confidence with an
+        honest "no public cause" explanation.
+    """
+    citations = data.get("citations")
+    if not isinstance(citations, list):
+        return data
+
+    fabricated: set[Any] = set()
+    kept: list[Any] = []
+    for c in citations:
+        if isinstance(c, dict) and c.get("kind") in ("news", "web"):
+            url = c.get("url")
+            if not url or url not in seen_urls:
+                fabricated.add(c.get("id"))
+                _log.warning(
+                    "[grounding] dropping ungrounded %s citation %r (url=%r)",
+                    c.get("kind"),
+                    c.get("id"),
+                    url,
+                )
+                continue
+        kept.append(c)
+
+    if not fabricated:
+        return data
+
+    data = {**data, "citations": kept}
+
+    for key in ("news_highlights", "bull_case", "bear_case", "risks"):
+        bullets = data.get(key)
+        if not isinstance(bullets, list):
+            continue
+        new_bullets: list[Any] = []
+        for b in bullets:
+            if not isinstance(b, dict):
+                new_bullets.append(b)
+                continue
+            cites = [cid for cid in b.get("citations", []) if cid not in fabricated]
+            if not cites:
+                _log.warning(
+                    "[grounding] dropping %s bullet with only ungrounded citations: %r",
+                    key,
+                    str(b.get("text", ""))[:80],
+                )
+                continue
+            new_bullets.append({**b, "citations": cites})
+        data[key] = new_bullets
+
+    anomalies = data.get("anomalies")
+    if isinstance(anomalies, list):
+        new_anoms: list[Any] = []
+        for a in anomalies:
+            if not isinstance(a, dict):
+                new_anoms.append(a)
+                continue
+            original = a.get("citations", [])
+            cites = [cid for cid in original if cid not in fabricated]
+            if original and not cites:
+                _log.warning(
+                    "[grounding] anomaly %r lost all support → low confidence",
+                    a.get("date"),
+                )
+                a = {
+                    **a,
+                    "citations": [],
+                    "confidence": "low",
+                    "explanation": _NO_CAUSE_EXPLANATION,
+                }
+            else:
+                a = {**a, "citations": cites}
+            new_anoms.append(a)
+        data["anomalies"] = new_anoms
+
+    return data
+
+
+def parse_final(text: str, seen_urls: set[str] | None = None) -> MarketBrief:
     """Parse the LLM's final text as a MarketBrief.
 
     Applies lightweight fixups for known LLM formatting quirks before strict
     Pydantic validation; propagates ValidationError or ValueError on failure.
+
+    When *seen_urls* is provided, news/web citations whose URL was not returned
+    by any tool during the run are rejected as ungrounded (fabricated) before
+    validation — see _enforce_citation_grounding.
     """
     raw = strip_code_fences(text)
     try:
@@ -303,6 +424,8 @@ def parse_final(text: str) -> MarketBrief:
         raise ValueError(f"brief is not valid JSON: {exc}") from exc
     if isinstance(data, dict):
         data = _fixup_brief_dict(data)
+        if seen_urls is not None:
+            data = _enforce_citation_grounding(data, seen_urls)
     return parse_brief(data)
 
 
