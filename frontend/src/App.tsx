@@ -83,6 +83,7 @@ export function App() {
         brief={brief}
         latencyS={latencyS}
         onStop={stopRun}
+        onBack={handleBackHome}
       />
 
       {/* Server-waking banner */}

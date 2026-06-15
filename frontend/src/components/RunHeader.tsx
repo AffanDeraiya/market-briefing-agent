@@ -14,6 +14,7 @@ interface Props {
   brief: MarketBrief | null;
   latencyS?: number;
   onStop?: () => void;
+  onBack?: () => void;
 }
 
 function StatusPill({
@@ -147,6 +148,7 @@ export function RunHeader({
   brief,
   latencyS,
   onStop,
+  onBack,
 }: Props) {
   const stopRun = useRunStore((s) => s.stopRun);
   const [copied, setCopied] = useState(false);
@@ -185,6 +187,39 @@ export function RunHeader({
 
   return (
     <div className="runhead" role="banner">
+      {onBack && (
+        <button
+          onClick={onBack}
+          title="Back to home"
+          aria-label="Back to home"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 30,
+            height: 30,
+            borderRadius: '50%',
+            border: '1px solid var(--bd)',
+            background: 'var(--raised)',
+            color: 'var(--ts)',
+            cursor: 'pointer',
+            flexShrink: 0,
+            transition: 'border-color 0.15s, color 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--bd)';
+            (e.currentTarget as HTMLButtonElement).style.color = 'var(--ts)';
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      )}
       <span className="tkr mono">{ticker}</span>
       <span className="co">{name}</span>
       {exchange && (
