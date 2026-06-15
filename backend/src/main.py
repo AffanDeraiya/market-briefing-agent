@@ -15,6 +15,7 @@ trusted proxy in front, as it allows clients to spoof their IP.
 
 from __future__ import annotations
 
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -47,6 +48,16 @@ def _rate_limit_handler(request: Request, exc: Exception) -> JSONResponse:
 def create_app() -> FastAPI:
     """Build and return a fully configured FastAPI application."""
     load_dotenv()
+
+    # Route market_brief.* log records to uvicorn's logger so they appear in the terminal
+    # alongside normal uvicorn output without any extra --log-level flags.
+    _mb_log = logging.getLogger("market_brief")
+    _mb_log.setLevel(logging.DEBUG)
+    if not _mb_log.handlers:
+        _handler = logging.StreamHandler()
+        _handler.setFormatter(logging.Formatter("%(levelname)s  %(name)s  %(message)s"))
+        _mb_log.addHandler(_handler)
+        _mb_log.propagate = False
 
     _app = FastAPI(title="Market Briefing Agent")
 

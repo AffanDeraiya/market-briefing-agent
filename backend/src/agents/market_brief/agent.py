@@ -7,15 +7,28 @@ encodes the control-flow contract (schema.md §4 agent loop state machine).
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import date
 from typing import Any
 from uuid import uuid4
 
+_log = logging.getLogger("market_brief.agent")
+
 from pydantic import ValidationError
 
 from src.llm import LLMBackend, Turn
 from src.schemas import MarketBrief
+
+try:
+    from openai import RateLimitError as _OpenAIRateLimitError
+except ImportError:  # pragma: no cover
+    _OpenAIRateLimitError = None  # type: ignore[assignment,misc]
+
+try:
+    from anthropic import RateLimitError as _AnthropicRateLimitError
+except ImportError:  # pragma: no cover
+    _AnthropicRateLimitError = None  # type: ignore[assignment,misc]
 
 from .cassette import CassetteRecorder, RecordingBackend
 from .events import (
@@ -50,7 +63,7 @@ __all__ = ["RunResult", "run_agent", "CLIENT_SAFE_KINDS"]
 # Error kinds whose messages are safe to surface directly to clients.
 # All other kinds get a generic message in the emitted SSE event; the
 # full detail is still preserved in RunResult.error for server-side logging.
-CLIENT_SAFE_KINDS: frozenset[str] = frozenset({"validation", "budget", "timeout", "parse"})
+CLIENT_SAFE_KINDS: frozenset[str] = frozenset({"validation", "budget", "timeout", "parse", "upstream"})
 
 
 # ---------------------------------------------------------------------------
@@ -101,6 +114,8 @@ def run_agent(
     # Wrap the backend in a RecordingBackend if a cassette recorder was provided.
     _backend: LLMBackend = RecordingBackend(backend, recorder) if recorder is not None else backend
 
+    _log.info("[run_start] ticker=%s period=%s model=%s run_id=%s", ticker, period, _backend.model, run_id)
+
     state = RunState(ticker=ticker, period=period)  # type: ignore[arg-type]
     state.history.append(Turn(role="user", text=build_user_message(ticker, period, _today)))
 
@@ -129,6 +144,7 @@ def run_agent(
                 break
 
             # ── LLM call ─────────────────────────────────────────────────
+            _log.info("[iteration %d] calling LLM...", state.iterations + 1)
             response = call_llm(
                 state,
                 _backend,
@@ -136,6 +152,16 @@ def run_agent(
                 tools=tool_specs(),
                 max_tokens=MAX_OUTPUT_TOKENS,
             )
+
+            _log.info(
+                "[iteration %d] response: is_final=%s tool_calls=%d text_len=%d",
+                state.iterations,
+                response.is_final,
+                len(response.tool_calls),
+                len(response.text),
+            )
+            if response.text.strip():
+                _log.debug("[iteration %d] text preview: %s", state.iterations, response.text[:300])
 
             if response.text.strip():
                 _emit(
@@ -145,12 +171,17 @@ def run_agent(
 
             # ── Final response branch ─────────────────────────────────────
             if response.is_final:
+                _log.info("[iteration %d] final response received, attempting parse", state.iterations)
                 try:
                     brief = parse_final(response.text)
                     attach_market_data(state, brief)
+                    _log.info("[run_ok] brief parsed successfully")
                     break
                 except (ValidationError, ValueError) as exc:
+                    _log.warning("[parse_fail] %s", str(exc)[:400])
+                    _log.warning("[parse_fail] text was: %s", response.text[:600])
                     if not state.repair_attempted:
+                        _log.info("[repair] injecting repair prompt")
                         inject_repair(state, str(exc))
                         continue
                     error = ("parse", f"brief failed validation after repair: {exc}")
@@ -168,7 +199,18 @@ def run_agent(
                         break
 
     except Exception as exc:  # noqa: BLE001 — last-resort guard; must always emit usage
-        error = ("internal", f"{type(exc).__name__}: {exc}")
+        # Surface provider rate-limit errors as 'upstream' so the client sees a useful
+        # message instead of the generic "An internal error occurred." fallback.
+        _is_rate_limit = (
+            (_OpenAIRateLimitError is not None and isinstance(exc, _OpenAIRateLimitError))
+            or (_AnthropicRateLimitError is not None and isinstance(exc, _AnthropicRateLimitError))
+        )
+        if _is_rate_limit:
+            _log.warning("[rate_limit] provider returned 429: %s", str(exc)[:300])
+            error = ("upstream", "LLM provider rate limit reached. Please wait a few minutes and try again.")
+        else:
+            _log.exception("[unhandled] %s: %s", type(exc).__name__, exc)
+            error = ("internal", f"{type(exc).__name__}: {exc}")
 
     # ── Usage summary ─────────────────────────────────────────────────────
     usage: dict[str, Any] = {
@@ -184,6 +226,7 @@ def run_agent(
         _emit(EVENT_BRIEF, brief.model_dump(mode="json"))
     elif error is not None:
         kind, detail = error
+        _log.error("[run_error] kind=%s detail=%s", kind, detail)
         # Only expose message detail for well-understood, client-safe error kinds.
         # Internal / upstream errors get a generic message so that stack traces,
         # third-party service names, etc. are not leaked to the client.

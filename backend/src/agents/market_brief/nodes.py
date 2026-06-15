@@ -11,12 +11,15 @@ best-effort: they MUST NOT propagate exceptions out of the loop.
 from __future__ import annotations
 
 import json
+import logging
 import re
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from src.llm import LLMBackend, LLMResponse, ToolResult, ToolSpec, Turn
 from src.schemas import MarketBrief, parse_brief
+
+_log = logging.getLogger("market_brief.nodes")
 
 from .events import (
     EVENT_ANOMALY_FOCUS,
@@ -203,9 +206,16 @@ def run_tool_calls(
         emit(EVENT_TOOL_CALL, {"seq": seq, "name": tc.name, "input": tc.input})
         _maybe_emit_anomaly_focus(state, tc, emit)
 
+        input_summary = json.dumps(tc.input, ensure_ascii=False)[:200]
+        _log.info("[tool_call #%d] %s | input=%s", seq, tc.name, input_summary)
+
         t0 = time.monotonic()
         content, is_error = execute_tool(tc.name, tc.input)
         ms = int((time.monotonic() - t0) * 1000)
+
+        _log.info("[tool_result #%d] %s | ok=%s ms=%d | %s", seq, tc.name, not is_error, ms, content[:200])
+        if is_error:
+            _log.warning("[tool_error #%d] %s: %s", seq, tc.name, content[:400])
 
         emit(
             EVENT_TOOL_RESULT,
@@ -256,12 +266,44 @@ def strip_code_fences(text: str) -> str:
     return stripped
 
 
+def _fixup_brief_dict(data: dict[str, Any]) -> dict[str, Any]:
+    """Lightweight fixup for common LLM output issues before strict validation.
+
+    Groq / llama models sometimes omit the URL field on news/web citations.
+    The schema requires url for kind != 'tool'.  Promote these to kind='tool'
+    so the brief doesn't silently fail on the first parse attempt (requiring a
+    costly repair round that may hit the provider's daily token cap).
+    """
+    citations = data.get("citations")
+    if not isinstance(citations, list):
+        return data
+    fixed = []
+    for c in citations:
+        if isinstance(c, dict) and c.get("kind") in ("news", "web") and not c.get("url"):
+            _log.warning(
+                "[fixup] citation %r has kind=%r but null url — promoting to kind='tool'",
+                c.get("id"),
+                c.get("kind"),
+            )
+            c = {**c, "kind": "tool"}
+        fixed.append(c)
+    return {**data, "citations": fixed}
+
+
 def parse_final(text: str) -> MarketBrief:
     """Parse the LLM's final text as a MarketBrief.
 
-    Propagates pydantic.ValidationError or ValueError on failure.
+    Applies lightweight fixups for known LLM formatting quirks before strict
+    Pydantic validation; propagates ValidationError or ValueError on failure.
     """
-    return parse_brief(strip_code_fences(text))
+    raw = strip_code_fences(text)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"brief is not valid JSON: {exc}") from exc
+    if isinstance(data, dict):
+        data = _fixup_brief_dict(data)
+    return parse_brief(data)
 
 
 def attach_market_data(state: RunState, brief: MarketBrief) -> None:
