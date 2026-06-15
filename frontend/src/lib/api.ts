@@ -3,6 +3,8 @@
 const BASE: string =
   (import.meta.env.VITE_API_BASE as string | undefined) ?? '';
 
+export { BASE };
+
 export interface ValidateResult {
   valid: boolean;
   name?: string;
@@ -26,4 +28,29 @@ export async function validateTicker(
     exchange?: string;
   };
   return data;
+}
+
+export interface SymbolSuggestion {
+  symbol: string;
+  name: string;
+  exchange: string;
+}
+
+export async function searchSymbols(
+  q: string,
+  signal?: AbortSignal,
+): Promise<SymbolSuggestion[]> {
+  const query = q.trim();
+  if (!query) return [];
+  try {
+    const resp = await fetch(
+      `${BASE}/api/search?q=${encodeURIComponent(query)}`,
+      { signal },
+    );
+    if (!resp.ok) return [];
+    const data = (await resp.json()) as { results?: SymbolSuggestion[] };
+    return data.results ?? [];
+  } catch {
+    return [];
+  }
 }

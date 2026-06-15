@@ -13,6 +13,7 @@ __all__ = [
     "rate_limit_per_hour",
     "rate_limit_per_day",
     "validate_rate_limit",
+    "search_rate_limit",
     "global_daily_cap",
     "DailyCounter",
     "daily_counter",
@@ -44,6 +45,11 @@ def rate_limit_per_day() -> int:
 def validate_rate_limit() -> str:
     """Slowapi limit string for /api/validate, read from env per-request so tests can override."""
     return f"{int(os.environ.get('RATE_LIMIT_VALIDATE_PER_HOUR', '30'))}/hour"
+
+
+def search_rate_limit() -> str:
+    """Slowapi limit string for /api/search — generous cap for autocomplete-while-typing."""
+    return f"{int(os.environ.get('RATE_LIMIT_SEARCH_PER_MINUTE', '60'))}/minute"
 
 
 def global_daily_cap() -> int:

@@ -454,6 +454,25 @@ class TestGetBackend:
         assert isinstance(backend, OpenAICompatBackend)
         assert backend.model == "llama-3.1-8b"
 
+    def test_openrouter_with_key_returns_openai_compat(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("LLM_PROVIDER", "openrouter")
+        monkeypatch.setenv("LLM_MODEL", "deepseek/deepseek-r1:free")
+        monkeypatch.setenv("OPENROUTER_API_KEY", "fake-openrouter-key")
+
+        backend = get_backend()
+
+        assert isinstance(backend, OpenAICompatBackend)
+        assert backend.model == "deepseek/deepseek-r1:free"
+
+    def test_openrouter_without_key_raises(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("LLM_PROVIDER", "openrouter")
+        monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+
+        with pytest.raises(ValueError, match="OPENROUTER_API_KEY"):
+            get_backend()
+
     def test_anthropic_with_key_returns_anthropic_backend(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:

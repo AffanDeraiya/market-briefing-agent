@@ -2,11 +2,12 @@
 tool_calls into ONE internal contract so the agent loop never touches wire formats.
 
 Env vars consumed by get_backend():
-  LLM_PROVIDER       default "gemini"   | "anthropic" | "groq"
-  LLM_MODEL          default "gemini-2.5-flash"
-  ANTHROPIC_API_KEY  required for provider "anthropic"
-  GEMINI_API_KEY     required for provider "gemini"
-  GROQ_API_KEY       required for provider "groq"
+  LLM_PROVIDER        default "gemini"   | "anthropic" | "groq" | "openrouter"
+  LLM_MODEL           default "gemini-2.5-flash"
+  ANTHROPIC_API_KEY   required for provider "anthropic"
+  GEMINI_API_KEY      required for provider "gemini"
+  GROQ_API_KEY        required for provider "groq"
+  OPENROUTER_API_KEY  required for provider "openrouter"
 """
 
 from __future__ import annotations
@@ -45,6 +46,7 @@ __all__ = [
     # constants
     "GEMINI_BASE_URL",
     "GROQ_BASE_URL",
+    "OPENROUTER_BASE_URL",
 ]
 
 # ---------------------------------------------------------------------------
@@ -53,6 +55,7 @@ __all__ = [
 
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 # ---------------------------------------------------------------------------
 # Normalised contract types
@@ -382,8 +385,11 @@ class OpenAICompatBackend(LLMBackend):
 def get_backend() -> LLMBackend:
     """Construct an LLMBackend from environment variables.
 
-    LLM_PROVIDER  default "gemini"  — "anthropic" | "gemini" | "groq"
+    LLM_PROVIDER  default "gemini"  — "anthropic" | "gemini" | "groq" | "openrouter"
     LLM_MODEL     default "gemini-2.5-flash"
+
+    OpenRouter is OpenAI-compatible; use a model id like
+    "deepseek/deepseek-r1:free" or "meta-llama/llama-3.3-70b-instruct:free".
     """
     provider = os.environ.get("LLM_PROVIDER", "gemini").lower()
     model = os.environ.get("LLM_MODEL", "gemini-2.5-flash")
@@ -406,4 +412,12 @@ def get_backend() -> LLMBackend:
             raise ValueError("groq backend requires GROQ_API_KEY")
         return OpenAICompatBackend(model=model, api_key=api_key, base_url=GROQ_BASE_URL)
 
-    raise ValueError(f"Unknown LLM_PROVIDER {provider!r}. Must be one of: anthropic, gemini, groq")
+    if provider == "openrouter":
+        api_key = os.environ.get("OPENROUTER_API_KEY", "")
+        if not api_key:
+            raise ValueError("openrouter backend requires OPENROUTER_API_KEY")
+        return OpenAICompatBackend(model=model, api_key=api_key, base_url=OPENROUTER_BASE_URL)
+
+    raise ValueError(
+        f"Unknown LLM_PROVIDER {provider!r}. Must be one of: anthropic, gemini, groq, openrouter"
+    )

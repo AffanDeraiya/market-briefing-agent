@@ -12,6 +12,7 @@ from src.agents.market_brief.utils.market_data import (
     TickerNotFoundError,
     get_fundamentals,
 )
+from src.agents.market_brief.utils.symbols import search_symbols
 
 from .guards import (
     daily_counter,
@@ -19,6 +20,7 @@ from .guards import (
     normalize_ticker,
     rate_limit_per_day,
     rate_limit_per_hour,
+    search_rate_limit,
     validate_rate_limit,
 )
 from .limiter import limiter
@@ -81,6 +83,13 @@ async def post_brief(request: Request, body: BriefRequest) -> EventSourceRespons
 
 
 # slowapi requires `request: Request` as the FIRST parameter on rate-limited endpoints.
+@router.get("/api/search")
+@limiter.limit(search_rate_limit)
+async def search_symbols_endpoint(request: Request, q: str = "") -> dict[str, object]:
+    """Return up to 8 ticker suggestions for a free-text query (autocomplete)."""
+    return {"results": [s.model_dump() for s in search_symbols(q)]}
+
+
 @router.get("/api/validate/{ticker}")
 @limiter.limit(validate_rate_limit)
 async def validate_ticker(request: Request, ticker: str) -> dict[str, object]:

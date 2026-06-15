@@ -12,6 +12,7 @@ from src.agents.market_brief.utils.market_data import (
     Fundamentals,
     TickerNotFoundError,
 )
+from src.agents.market_brief.utils.symbols import SymbolSuggestion
 from src.api.guards import daily_counter, inflight
 from src.main import create_app
 
@@ -380,6 +381,32 @@ def test_inflight_release(monkeypatch: pytest.MonkeyPatch) -> None:
 
     # After release the slot is free again.
     assert inflight.try_acquire("1.2.3.4") is True
+
+
+# ---------------------------------------------------------------------------
+# GET /api/search
+# ---------------------------------------------------------------------------
+
+
+def test_search_returns_suggestions(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """GET /api/search?q=apple returns suggestions from search_symbols."""
+    monkeypatch.setattr(
+        "src.api.routes.search_symbols",
+        lambda q, **kw: [SymbolSuggestion(symbol="AAPL", name="Apple Inc.", exchange="NASDAQ")],
+    )
+    resp = client.get("/api/search?q=apple")
+    assert resp.status_code == 200
+    assert resp.json() == {
+        "results": [{"symbol": "AAPL", "name": "Apple Inc.", "exchange": "NASDAQ"}]
+    }
+
+
+def test_search_empty_query(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """GET /api/search?q= (empty) returns an empty results list."""
+    monkeypatch.setattr("src.api.routes.search_symbols", lambda q, **kw: [])
+    resp = client.get("/api/search?q=")
+    assert resp.status_code == 200
+    assert resp.json() == {"results": []}
 
 
 # ---------------------------------------------------------------------------

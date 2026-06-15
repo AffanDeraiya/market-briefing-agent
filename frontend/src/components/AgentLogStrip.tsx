@@ -6,6 +6,37 @@ import { TOOL_DESCRIPTIONS } from '../lib/demoFixture';
 
 const MAX_TOOL_CALLS = 15;
 
+function describeToolCall(step: LogStep): string {
+  const i = (step.input ?? {}) as Record<string, unknown>;
+  const ticker = typeof i.ticker === 'string' ? i.ticker : '';
+  const period = typeof i.period === 'string' ? i.period : '';
+  const query = typeof i.query === 'string' ? i.query : '';
+  const from = typeof i.from_date === 'string' ? i.from_date : '';
+  const to = typeof i.to_date === 'string' ? i.to_date : '';
+  const url = typeof i.url === 'string' ? i.url : '';
+  switch (step.name) {
+    case 'get_price_history':
+      return `Pulled ${period || ''} price history for ${ticker || 'the ticker'}.`.replace(
+        '  ',
+        ' ',
+      );
+    case 'get_fundamentals':
+      return `Fetched fundamentals (sector, market cap, P/E) for ${ticker || 'the ticker'}.`;
+    case 'compute_indicators':
+      return `Computed technical indicators (RSI, SMA20/50, volatility, drawdown) for ${ticker || 'the ticker'}.`;
+    case 'detect_anomalies':
+      return `Scanned ${ticker || 'the ticker'} for statistically unusual trading days.`;
+    case 'get_company_news':
+      return `Searched news for "${query}"${from && to ? ` (${from} → ${to})` : ''}.`;
+    case 'search_web':
+      return `Ran a general web search for "${query}".`;
+    case 'fetch_page':
+      return `Read the full article at ${url}.`;
+    default:
+      return TOOL_DESCRIPTIONS[step.name ?? ''] ?? 'Tool call.';
+  }
+}
+
 interface Props {
   log: LogStep[];
   usage: UsagePayload | null;
@@ -14,7 +45,8 @@ interface Props {
 }
 
 function ToolStepCard({ step }: { step: LogStep }) {
-  const desc = TOOL_DESCRIPTIONS[step.name ?? ''] ?? '';
+  const staticDesc = TOOL_DESCRIPTIONS[step.name ?? ''] ?? '';
+  const dynamicDesc = describeToolCall(step);
   const inputStr = step.input
     ? Object.entries(step.input)
         .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
@@ -29,7 +61,8 @@ function ToolStepCard({ step }: { step: LogStep }) {
           {step.ok !== false ? '✓ ok' : '✗ error'}
         </span>
       </div>
-      <div className="pdesc">{desc}</div>
+      <div className="pdesc">{dynamicDesc}</div>
+      {staticDesc && <div className="pdesc-static">{staticDesc}</div>}
       <div className="prow">
         <span className="pk">input</span>
         <span className="pv">

@@ -4,7 +4,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Period } from '../lib/types';
 import { useRunStore } from '../store/runStore';
 import type { RecentBrief } from '../store/runStore';
-import { validateTicker } from '../lib/api';
+import { validateTicker, searchSymbols } from '../lib/api';
+import type { SymbolSuggestion } from '../lib/api';
 import { pct, changeClass } from '../lib/format';
 
 const CHIPS: string[] = ['AAPL', 'TSLA', 'RELIANCE.NS', 'MSFT'];
@@ -60,8 +61,14 @@ export function Home({ onGenerate }: Props) {
     error?: string;
   }>({ loading: false });
 
+  const [suggestions, setSuggestions] = useState<SymbolSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recents = useRunStore((s) => s.recents);
   const loadRecent = useRunStore((s) => s.loadRecent);
   const setStoreStatus = useRunStore((s) => s.setStatus);
@@ -94,8 +101,42 @@ export function Home({ onGenerate }: Props) {
     };
   }, [ticker, doValidate]);
 
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    const q = ticker.trim();
+    searchDebounceRef.current = setTimeout(async () => {
+      if (!q) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+      searchAbortRef.current?.abort();
+      searchAbortRef.current = new AbortController();
+      const results = await searchSymbols(q, searchAbortRef.current.signal);
+      setSuggestions(results);
+      setShowSuggestions(results.length > 0);
+      setActiveIndex(-1);
+    }, 250);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [ticker]);
+
+  const selectSuggestion = useCallback(
+    (s: SymbolSuggestion) => {
+      setTicker(s.symbol);
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setActiveIndex(-1);
+      doValidate(s.symbol);
+    },
+    [doValidate],
+  );
+
   const handleChip = (chip: string) => {
     setTicker(chip);
+    setSuggestions([]);
+    setShowSuggestions(false);
     doValidate(chip);
   };
 
@@ -141,7 +182,41 @@ export function Home({ onGenerate }: Props) {
             placeholder="AAPL"
             spellCheck={false}
             aria-label="Stock ticker"
-            onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+            aria-autocomplete="list"
+            aria-expanded={showSuggestions && suggestions.length > 0}
+            onFocus={() => {
+              if (suggestions.length > 0) setShowSuggestions(true);
+            }}
+            onBlur={() => {
+              setTimeout(() => setShowSuggestions(false), 150);
+            }}
+            onKeyDown={(e) => {
+              if (showSuggestions && suggestions.length > 0) {
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  setActiveIndex((i) =>
+                    Math.min(i + 1, suggestions.length - 1),
+                  );
+                  return;
+                }
+                if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  setActiveIndex((i) => Math.max(i - 1, 0));
+                  return;
+                }
+                if (e.key === 'Escape') {
+                  setShowSuggestions(false);
+                  setActiveIndex(-1);
+                  return;
+                }
+                if (e.key === 'Enter' && activeIndex >= 0) {
+                  e.preventDefault();
+                  selectSuggestion(suggestions[activeIndex]);
+                  return;
+                }
+              }
+              if (e.key === 'Enter') handleGenerate();
+            }}
           />
           {validation.loading && (
             <span
@@ -172,6 +247,30 @@ export function Home({ onGenerate }: Props) {
               {validation.error ??
                 'Not found — try Yahoo Finance symbol (e.g. RELIANCE.NS)'}
             </span>
+          )}
+          {showSuggestions && suggestions.length > 0 && (
+            <ul
+              className="ac-list"
+              role="listbox"
+              aria-label="Ticker suggestions"
+            >
+              {suggestions.map((s, idx) => (
+                <li
+                  key={s.symbol}
+                  className={`ac-item${idx === activeIndex ? ' is-active' : ''}`}
+                  role="option"
+                  aria-selected={idx === activeIndex}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    selectSuggestion(s);
+                  }}
+                >
+                  <span className="ac-sym">{s.symbol}</span>
+                  <span className="ac-name">{s.name}</span>
+                  <span className="ac-ex">{s.exchange}</span>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
         <div className="chips">
