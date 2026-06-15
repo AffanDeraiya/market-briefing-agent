@@ -29,7 +29,11 @@ interface RecentCardProps {
 
 function RecentCard({ r, onClick }: RecentCardProps) {
   return (
-    <button className="rcard" onClick={onClick} aria-label={`Open ${r.ticker} brief`}>
+    <button
+      className="rcard"
+      onClick={onClick}
+      aria-label={`Open ${r.ticker} brief`}
+    >
       <div className="rt">{r.ticker}</div>
       <div className={`rm mono ${changeClass(r.change_1d)}`}>
         {pct(r.change_1d)} · {r.period}
@@ -71,7 +75,10 @@ export function Home({ onGenerate }: Props) {
     abortRef.current = new AbortController();
     setValidation({ loading: true });
     try {
-      const result = await validateTicker(t.trim().toUpperCase(), abortRef.current.signal);
+      const result = await validateTicker(
+        t.trim().toUpperCase(),
+        abortRef.current.signal,
+      );
       setValidation({ loading: false, ...result });
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') return;
@@ -114,11 +121,16 @@ export function Home({ onGenerate }: Props) {
           maxWidth: '15ch',
         }}
       >
-        Watch an agent <em style={{ fontStyle: 'normal', color: 'var(--accent)' }}>build the brief</em> live — every claim cited.
+        Watch an agent{' '}
+        <em style={{ fontStyle: 'normal', color: 'var(--accent)' }}>
+          build the brief
+        </em>{' '}
+        live — every claim cited.
       </h2>
       <p className="sub">
-        Enter a ticker. The agent pulls prices, flags the unusual trading days, investigates each
-        one, and writes a structured, sourced brief that grows on the page as it works.
+        Enter a ticker. The agent pulls prices, flags the unusual trading days,
+        investigates each one, and writes a structured, sourced brief that grows
+        on the page as it works.
       </p>
 
       <div className="field">
@@ -132,7 +144,13 @@ export function Home({ onGenerate }: Props) {
             onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
           />
           {validation.loading && (
-            <span style={{ color: 'var(--tt)', fontFamily: 'JetBrains Mono', fontSize: 12 }}>
+            <span
+              style={{
+                color: 'var(--tt)',
+                fontFamily: 'JetBrains Mono',
+                fontSize: 12,
+              }}
+            >
               …
             </span>
           )}
@@ -142,8 +160,17 @@ export function Home({ onGenerate }: Props) {
             </span>
           )}
           {!validation.loading && validation.valid === false && ticker && (
-            <span style={{ color: 'var(--neg)', fontFamily: 'Inter', fontSize: 12, whiteSpace: 'nowrap' }}>
-              ✗ {validation.error ?? 'Not found — try Yahoo Finance symbol (e.g. RELIANCE.NS)'}
+            <span
+              style={{
+                color: 'var(--neg)',
+                fontFamily: 'Inter',
+                fontSize: 12,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              ✗{' '}
+              {validation.error ??
+                'Not found — try Yahoo Finance symbol (e.g. RELIANCE.NS)'}
             </span>
           )}
         </div>
@@ -177,7 +204,11 @@ export function Home({ onGenerate }: Props) {
           <div className="rh">Recent briefs</div>
           <div className="rlist">
             {recents.slice(0, 5).map((r) => (
-              <RecentCard key={r.ticker + r.as_of} r={r} onClick={() => handleOpenRecent(r)} />
+              <RecentCard
+                key={r.ticker + r.as_of}
+                r={r}
+                onClick={() => handleOpenRecent(r)}
+              />
             ))}
           </div>
         </div>

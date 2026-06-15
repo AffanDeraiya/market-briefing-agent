@@ -25,7 +25,9 @@ describe('CitationChip', () => {
 
   it('renders popover with title', () => {
     render(<CitationChip id="c2" citations={mockCitations} />);
-    expect(screen.getByText('AAPL Stock Slides Following WWDC')).toBeInTheDocument();
+    expect(
+      screen.getByText('AAPL Stock Slides Following WWDC'),
+    ).toBeInTheDocument();
   });
 
   it('renders popover with domain for news citation', () => {
@@ -46,7 +48,9 @@ describe('CitationChip', () => {
 
 describe('InlineCites', () => {
   it('renders nothing when ids is empty', () => {
-    const { container } = render(<InlineCites ids={[]} citations={mockCitations} />);
+    const { container } = render(
+      <InlineCites ids={[]} citations={mockCitations} />,
+    );
     expect(container.firstChild).toBeNull();
   });
 

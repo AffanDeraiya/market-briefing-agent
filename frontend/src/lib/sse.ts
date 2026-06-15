@@ -3,7 +3,8 @@
 
 import type { BriefEvent, Period } from './types';
 
-const BASE: string = (import.meta.env.VITE_API_BASE as string | undefined) ?? '';
+const BASE: string =
+  (import.meta.env.VITE_API_BASE as string | undefined) ?? '';
 
 export interface BriefRequest {
   ticker: string;
@@ -28,7 +29,7 @@ export class BriefStreamError extends Error {
 export async function streamBrief(
   req: BriefRequest,
   onEvent: (ev: BriefEvent) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<void> {
   const resp = await fetch(`${BASE}/api/brief`, {
     method: 'POST',

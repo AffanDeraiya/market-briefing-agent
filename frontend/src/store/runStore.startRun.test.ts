@@ -51,14 +51,11 @@ describe('runStore.startRun', () => {
     ];
 
     mockStreamBrief.mockImplementation(
-      async (
-        _req,
-        onEvent: (ev: BriefEvent) => void
-      ): Promise<void> => {
+      async (_req, onEvent: (ev: BriefEvent) => void): Promise<void> => {
         for (const ev of events) {
           onEvent(ev);
         }
-      }
+      },
     );
 
     // Act
@@ -101,7 +98,7 @@ describe('runStore.startRun', () => {
       async (
         _req,
         _onEvent: (ev: BriefEvent) => void,
-        signal?: AbortSignal
+        signal?: AbortSignal,
       ): Promise<void> => {
         capturedSignal = signal;
         // Simulate a slow stream that never finishes — resolves after being aborted
@@ -112,7 +109,7 @@ describe('runStore.startRun', () => {
             });
           }
         });
-      }
+      },
     );
 
     useRunStore.getState().startRun('TSLA', '6mo');

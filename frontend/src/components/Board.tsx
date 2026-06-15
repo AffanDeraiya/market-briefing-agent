@@ -23,7 +23,9 @@ interface Props {
 }
 
 // Chart sigma lookup from chart anomalies
-function buildSigmaMap(chartData: ChartDataPayload | null): Record<string, string> {
+function buildSigmaMap(
+  chartData: ChartDataPayload | null,
+): Record<string, string> {
   if (!chartData) return {};
   const map: Record<string, string> = {};
   for (const a of chartData.anomalies) {
@@ -39,7 +41,12 @@ interface SectionWrapperProps {
   delay?: number;
 }
 
-function SectionWrapper({ ready, children, minHeight = 80, delay = 0 }: SectionWrapperProps) {
+function SectionWrapper({
+  ready,
+  children,
+  minHeight = 80,
+  delay = 0,
+}: SectionWrapperProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,7 +79,13 @@ function SectionWrapper({ ready, children, minHeight = 80, delay = 0 }: SectionW
   );
 }
 
-export function Board({ brief, chartData, ticker, period, isStreaming }: Props) {
+export function Board({
+  brief,
+  chartData,
+  ticker,
+  period,
+  isStreaming,
+}: Props) {
   const sigmas = buildSigmaMap(chartData);
 
   return (
@@ -97,7 +110,11 @@ export function Board({ brief, chartData, ticker, period, isStreaming }: Props) 
 
       {/* 52-week range bar */}
       <SectionWrapper ready={!!brief} minHeight={70} delay={120}>
-        {brief ? <RangeBar snapshot={brief.snapshot} /> : <div style={{ minHeight: 70 }} />}
+        {brief ? (
+          <RangeBar snapshot={brief.snapshot} />
+        ) : (
+          <div style={{ minHeight: 70 }} />
+        )}
       </SectionWrapper>
 
       {/* Section 01 — Technical read */}

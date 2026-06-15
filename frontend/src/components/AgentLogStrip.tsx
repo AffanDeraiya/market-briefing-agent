@@ -32,7 +32,9 @@ function ToolStepCard({ step }: { step: LogStep }) {
       <div className="pdesc">{desc}</div>
       <div className="prow">
         <span className="pk">input</span>
-        <span className="pv">{inputStr.length > 60 ? inputStr.slice(0, 60) + '…' : inputStr}</span>
+        <span className="pv">
+          {inputStr.length > 60 ? inputStr.slice(0, 60) + '…' : inputStr}
+        </span>
       </div>
       <div className="prow">
         <span className="pk">result</span>
@@ -40,7 +42,9 @@ function ToolStepCard({ step }: { step: LogStep }) {
       </div>
       <div className="prow">
         <span className="pk">duration</span>
-        <span className="pv">{step.ms !== undefined ? `${step.ms} ms` : '…'}</span>
+        <span className="pv">
+          {step.ms !== undefined ? `${step.ms} ms` : '…'}
+        </span>
       </div>
     </div>
   );
@@ -54,7 +58,8 @@ function AnomalyStepCard({ step }: { step: LogStep }) {
         <span className="pstat an">investigate</span>
       </div>
       <div className="pdesc">
-        The agent paused the scan to investigate the most unusual day before writing anything.
+        The agent paused the scan to investigate the most unusual day before
+        writing anything.
       </div>
       <div className="prow">
         <span className="pk">target</span>
@@ -102,9 +107,7 @@ function RunSummaryCard({
   const inK = (usage.input_tokens / 1000).toFixed(1) + 'k';
   const outK = (usage.output_tokens / 1000).toFixed(1) + 'k';
   const costStr =
-    usage.est_cost_usd === 0
-      ? '$0.00'
-      : '$' + usage.est_cost_usd.toFixed(4);
+    usage.est_cost_usd === 0 ? '$0.00' : '$' + usage.est_cost_usd.toFixed(4);
   const latencyS = (usage.latency_ms / 1000).toFixed(0);
 
   return (
@@ -114,7 +117,8 @@ function RunSummaryCard({
         <span className="pstat ok">done</span>
       </div>
       <div className="pdesc">
-        One brief = one agent run = one streamed timeline. Every external call is bounded.
+        One brief = one agent run = one streamed timeline. Every external call
+        is bounded.
       </div>
       <div className="prow">
         <span className="pk">model</span>
@@ -122,9 +126,7 @@ function RunSummaryCard({
       </div>
       <div className="prow">
         <span className="pk">iterations</span>
-        <span className="pv">
-          {usage.iterations} / 20
-        </span>
+        <span className="pv">{usage.iterations} / 20</span>
       </div>
       <div className="prow">
         <span className="pk">tool calls</span>
@@ -173,8 +175,14 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
   const toolCallCount = log.filter((s) => s.type === 'tool_call').length;
   const budgetPct = Math.round((toolCallCount / MAX_TOOL_CALLS) * 100);
 
-  const totalTokens = usage ? ((usage.input_tokens + usage.output_tokens) / 1000).toFixed(1) + 'k' : '—';
-  const latencyS = usage ? (usage.latency_ms / 1000).toFixed(0) + 's' : status === 'streaming' ? '…' : '—';
+  const totalTokens = usage
+    ? ((usage.input_tokens + usage.output_tokens) / 1000).toFixed(1) + 'k'
+    : '—';
+  const latencyS = usage
+    ? (usage.latency_ms / 1000).toFixed(0) + 's'
+    : status === 'streaming'
+      ? '…'
+      : '—';
   const costStr = usage
     ? usage.est_cost_usd === 0
       ? '$0.00'
@@ -191,7 +199,11 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
           aria-label="Agent log summary"
         >
           <span className="strip-label">
-            <span className="lp" aria-hidden="true" style={{ background: '#6ab88a' }} />
+            <span
+              className="lp"
+              aria-hidden="true"
+              style={{ background: '#6ab88a' }}
+            />
             agent log
           </span>
           <button
@@ -199,10 +211,18 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
             onClick={() => setExpanded(true)}
             aria-label="Expand agent log"
           >
-            ✓ {toolCallCount} tool calls · {latencyS}{costStr ? ` · ${costStr}` : ''} · <span className="expand-hint">expand</span>
+            ✓ {toolCallCount} tool calls · {latencyS}
+            {costStr ? ` · ${costStr}` : ''} ·{' '}
+            <span className="expand-hint">expand</span>
           </button>
         </div>
-        <div className="budgetbar" role="progressbar" aria-valuenow={100} aria-valuemin={0} aria-valuemax={100}>
+        <div
+          className="budgetbar"
+          role="progressbar"
+          aria-valuenow={100}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
           <i style={{ width: `${budgetPct}%` }} />
         </div>
       </>
@@ -211,7 +231,12 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
 
   return (
     <>
-      <div className="strip" role="region" aria-label="Agent log" aria-live="polite">
+      <div
+        className="strip"
+        role="region"
+        aria-label="Agent log"
+        aria-live="polite"
+      >
         <span className="strip-label">
           <span className="lp" aria-hidden="true" />
           agent log
@@ -270,8 +295,10 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
           })}
         </div>
         <div className="runstats" tabIndex={0} aria-label="Run statistics">
-          <span className="sv mono">{toolCallCount}/{MAX_TOOL_CALLS}</span> tools{' '}
-          <span className="sv mono">{totalTokens}</span> tok{' '}
+          <span className="sv mono">
+            {toolCallCount}/{MAX_TOOL_CALLS}
+          </span>{' '}
+          tools <span className="sv mono">{totalTokens}</span> tok{' '}
           <span className="sv mono">{latencyS}</span>
           {isSuccess && (
             <button
@@ -291,7 +318,13 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
           {usage && <RunSummaryCard usage={usage} model={model} />}
         </div>
       </div>
-      <div className="budgetbar" role="progressbar" aria-valuenow={budgetPct} aria-valuemin={0} aria-valuemax={100}>
+      <div
+        className="budgetbar"
+        role="progressbar"
+        aria-valuenow={budgetPct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
         <i style={{ width: `${budgetPct}%` }} />
       </div>
     </>

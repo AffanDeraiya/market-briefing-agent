@@ -109,7 +109,7 @@ describe('runStore', () => {
     }
     const { brief } = useRunStore.getState();
     expect(brief?.disclaimer).toBe(
-      'Educational project. Not financial advice. Data via Yahoo Finance; may be delayed or inaccurate.'
+      'Educational project. Not financial advice. Data via Yahoo Finance; may be delayed or inaccurate.',
     );
   });
 

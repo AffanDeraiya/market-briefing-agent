@@ -31,22 +31,43 @@ export function fmtCap(n: number): string {
 import type { MarketBrief } from './types';
 
 export function mdExport(brief: MarketBrief): string {
-  const { ticker, name, as_of, period, snapshot, indicators, technical_summary, anomalies, news_highlights, bull_case, bear_case, risks, citations, disclaimer } = brief;
+  const {
+    ticker,
+    name,
+    as_of,
+    period,
+    snapshot,
+    indicators,
+    technical_summary,
+    anomalies,
+    news_highlights,
+    bull_case,
+    bear_case,
+    risks,
+    citations,
+    disclaimer,
+  } = brief;
 
   const inlineCites = (ids: string[]): string =>
-    ids.length ? ' ' + ids.map(id => `[${id}]`).join(' ') : '';
+    ids.length ? ' ' + ids.map((id) => `[${id}]`).join(' ') : '';
 
-  const bulletSection = (title: string, items: { text: string; citations: string[] }[]): string =>
-    `## ${title}\n\n` + items.map(b => `- ${b.text}${inlineCites(b.citations)}`).join('\n') + '\n\n';
+  const bulletSection = (
+    title: string,
+    items: { text: string; citations: string[] }[],
+  ): string =>
+    `## ${title}\n\n` +
+    items.map((b) => `- ${b.text}${inlineCites(b.citations)}`).join('\n') +
+    '\n\n';
 
   const anomalySection = anomalies
-    .map(a =>
-      `### ${a.date} — ${a.magnitude}\n\n${a.explanation}${inlineCites(a.citations)}\n\n_Confidence: ${a.confidence}_\n`
+    .map(
+      (a) =>
+        `### ${a.date} — ${a.magnitude}\n\n${a.explanation}${inlineCites(a.citations)}\n\n_Confidence: ${a.confidence}_\n`,
     )
     .join('\n');
 
   const sourcesList = citations
-    .map(c => `- **[${c.id}]** ${c.title}${c.url ? ' — ' + c.url : ''}`)
+    .map((c) => `- **[${c.id}]** ${c.title}${c.url ? ' — ' + c.url : ''}`)
     .join('\n');
 
   return [
@@ -69,8 +90,16 @@ export function mdExport(brief: MarketBrief): string {
     anomalies.length ? `## Anomalies\n\n${anomalySection}` : '',
     bulletSection('What the News Says', news_highlights),
     `## Bull & Bear\n`,
-    `### Bull case\n\n` + bull_case.map(b => `- ${b.text}${inlineCites(b.citations)}`).join('\n') + '\n',
-    `\n### Bear case\n\n` + bear_case.map(b => `- ${b.text}${inlineCites(b.citations)}`).join('\n') + '\n\n',
+    `### Bull case\n\n` +
+      bull_case
+        .map((b) => `- ${b.text}${inlineCites(b.citations)}`)
+        .join('\n') +
+      '\n',
+    `\n### Bear case\n\n` +
+      bear_case
+        .map((b) => `- ${b.text}${inlineCites(b.citations)}`)
+        .join('\n') +
+      '\n\n',
     bulletSection('Key Risks', risks),
     `## Sources\n\n${sourcesList}\n`,
     `---\n\n_${disclaimer}_`,

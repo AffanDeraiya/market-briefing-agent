@@ -28,13 +28,16 @@ export function IndicatorChips({ indicators }: Props) {
         <span className="sig">annualized</span>
       </span>
       <span className="chipi" role="listitem">
-        Max DD <b className={changeClass(max_drawdown_pct)}>{pct(max_drawdown_pct)}</b>
+        Max DD{' '}
+        <b className={changeClass(max_drawdown_pct)}>{pct(max_drawdown_pct)}</b>
       </span>
       <span className="chipi" role="listitem">
-        vs SMA-20 <b className={changeClass(sma20_vs_price)}>{pct(sma20_vs_price)}</b>
+        vs SMA-20{' '}
+        <b className={changeClass(sma20_vs_price)}>{pct(sma20_vs_price)}</b>
       </span>
       <span className="chipi" role="listitem">
-        vs SMA-50 <b className={changeClass(sma50_vs_price)}>{pct(sma50_vs_price)}</b>
+        vs SMA-50{' '}
+        <b className={changeClass(sma50_vs_price)}>{pct(sma50_vs_price)}</b>
       </span>
       <span className="chipi" role="listitem">
         Volume <b>{volume_trend}</b>

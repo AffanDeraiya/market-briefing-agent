@@ -16,7 +16,15 @@ interface Props {
   onStop?: () => void;
 }
 
-function StatusPill({ status, latencyS, onStop }: { status: RunStatus; latencyS?: number; onStop?: () => void }) {
+function StatusPill({
+  status,
+  latencyS,
+  onStop,
+}: {
+  status: RunStatus;
+  latencyS?: number;
+  onStop?: () => void;
+}) {
   if (status === 'streaming') {
     return (
       <span className="pill running">
@@ -55,9 +63,17 @@ function StatusPill({ status, latencyS, onStop }: { status: RunStatus; latencyS?
     return (
       <span
         className="pill"
-        style={{ color: 'var(--neg)', borderColor: 'rgba(160,32,32,.25)', background: 'rgba(160,32,32,.07)' }}
+        style={{
+          color: 'var(--neg)',
+          borderColor: 'rgba(160,32,32,.25)',
+          background: 'rgba(160,32,32,.07)',
+        }}
       >
-        <span className="dot" style={{ background: 'var(--neg)' }} aria-hidden="true" />
+        <span
+          className="dot"
+          style={{ background: 'var(--neg)' }}
+          aria-hidden="true"
+        />
         Failed
       </span>
     );
@@ -66,9 +82,17 @@ function StatusPill({ status, latencyS, onStop }: { status: RunStatus; latencyS?
     return (
       <span
         className="pill"
-        style={{ color: 'var(--ts)', borderColor: 'var(--bd)', background: 'var(--raised)' }}
+        style={{
+          color: 'var(--ts)',
+          borderColor: 'var(--bd)',
+          background: 'var(--raised)',
+        }}
       >
-        <span className="dot" style={{ background: 'var(--ts)' }} aria-hidden="true" />
+        <span
+          className="dot"
+          style={{ background: 'var(--ts)' }}
+          aria-hidden="true"
+        />
         Stopped
       </span>
     );
@@ -77,9 +101,17 @@ function StatusPill({ status, latencyS, onStop }: { status: RunStatus; latencyS?
     return (
       <span
         className="pill"
-        style={{ color: 'var(--anom)', borderColor: 'rgba(138,90,0,.25)', background: 'rgba(138,90,0,.07)' }}
+        style={{
+          color: 'var(--anom)',
+          borderColor: 'rgba(138,90,0,.25)',
+          background: 'rgba(138,90,0,.07)',
+        }}
       >
-        <span className="dot" style={{ background: 'var(--anom)' }} aria-hidden="true" />
+        <span
+          className="dot"
+          style={{ background: 'var(--anom)' }}
+          aria-hidden="true"
+        />
         Rate limited
       </span>
     );
@@ -88,9 +120,17 @@ function StatusPill({ status, latencyS, onStop }: { status: RunStatus; latencyS?
     return (
       <span
         className="pill running"
-        style={{ color: 'var(--ts)', borderColor: 'var(--bd)', background: 'var(--raised)' }}
+        style={{
+          color: 'var(--ts)',
+          borderColor: 'var(--bd)',
+          background: 'var(--raised)',
+        }}
       >
-        <span className="dot" style={{ background: 'var(--ts)' }} aria-hidden="true" />
+        <span
+          className="dot"
+          style={{ background: 'var(--ts)' }}
+          aria-hidden="true"
+        />
         Waking…
       </span>
     );
@@ -98,7 +138,16 @@ function StatusPill({ status, latencyS, onStop }: { status: RunStatus; latencyS?
   return null;
 }
 
-export function RunHeader({ ticker, name, exchange, period, status, brief, latencyS, onStop }: Props) {
+export function RunHeader({
+  ticker,
+  name,
+  exchange,
+  period,
+  status,
+  brief,
+  latencyS,
+  onStop,
+}: Props) {
   const stopRun = useRunStore((s) => s.stopRun);
   const [copied, setCopied] = useState(false);
 
@@ -138,14 +187,26 @@ export function RunHeader({ ticker, name, exchange, period, status, brief, laten
     <div className="runhead" role="banner">
       <span className="tkr mono">{ticker}</span>
       <span className="co">{name}</span>
-      {exchange && <span className="meta mono">{exchange} · {period}</span>}
+      {exchange && (
+        <span className="meta mono">
+          {exchange} · {period}
+        </span>
+      )}
       {!exchange && <span className="meta mono">{period}</span>}
       <div className="spacer" />
       <div className="actions">
-        <button onClick={handleCopyMd} title="Copy the brief as Markdown" disabled={!brief}>
+        <button
+          onClick={handleCopyMd}
+          title="Copy the brief as Markdown"
+          disabled={!brief}
+        >
           {copied ? '✓ Copied' : '⧉ Copy MD'}
         </button>
-        <button onClick={handleExport} title="Download the brief as a .md file" disabled={!brief}>
+        <button
+          onClick={handleExport}
+          title="Download the brief as a .md file"
+          disabled={!brief}
+        >
           ↓ Export
         </button>
       </div>

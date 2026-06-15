@@ -24,7 +24,11 @@ export function Sources({ brief }: Props) {
                 </>
               ) : (
                 <>
-                  <a href={c.url ?? '#'} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={c.url ?? '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     {c.title}
                   </a>{' '}
                   <span style={{ opacity: 0.55 }}>· {c.kind}</span>

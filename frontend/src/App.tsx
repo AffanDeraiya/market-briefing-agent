@@ -88,11 +88,25 @@ export function App() {
       {/* Server-waking banner */}
       {status === 'server_waking' && (
         <div className="board" style={{ paddingTop: 0 }}>
-          <div className="error-card" style={{ borderColor: 'rgba(30,58,95,.25)', background: 'rgba(30,58,95,.06)', color: 'var(--accent)' }}>
+          <div
+            className="error-card"
+            style={{
+              borderColor: 'rgba(30,58,95,.25)',
+              background: 'rgba(30,58,95,.06)',
+              color: 'var(--accent)',
+            }}
+          >
             <span style={{ fontFamily: 'JetBrains Mono', fontSize: 13 }}>
               ⏳ Demo server waking (~30s)…
             </span>
-            <span style={{ display: 'block', marginTop: 6, fontSize: 12, color: 'var(--ts)' }}>
+            <span
+              style={{
+                display: 'block',
+                marginTop: 6,
+                fontSize: 12,
+                color: 'var(--ts)',
+              }}
+            >
               Auto-retrying once the server responds. Please wait.
             </span>
           </div>
@@ -102,16 +116,29 @@ export function App() {
       {/* Rate-limited banner */}
       {status === 'rate_limited' && (
         <div className="board" style={{ paddingTop: 0 }}>
-          <div className="error-card" style={{ borderColor: 'rgba(138,90,0,.2)', background: 'rgba(138,90,0,.05)', color: 'var(--anom)' }}>
-            <strong>Rate limit reached.</strong>
-            {' '}Limit: 5 briefs/hour per visitor.{' '}
+          <div
+            className="error-card"
+            style={{
+              borderColor: 'rgba(138,90,0,.2)',
+              background: 'rgba(138,90,0,.05)',
+              color: 'var(--anom)',
+            }}
+          >
+            <strong>Rate limit reached.</strong> Limit: 5 briefs/hour per
+            visitor.{' '}
             {retryAfterS !== null
               ? `Try again in ${Math.ceil(retryAfterS / 60)}m.`
               : 'Try again in a few minutes.'}
             <br />
             <button
               onClick={handleBackHome}
-              style={{ marginTop: 10, color: 'var(--accent)', textDecoration: 'underline', fontFamily: 'Inter', fontSize: 13 }}
+              style={{
+                marginTop: 10,
+                color: 'var(--accent)',
+                textDecoration: 'underline',
+                fontFamily: 'Inter',
+                fontSize: 13,
+              }}
             >
               ← Back to home
             </button>
@@ -135,7 +162,13 @@ export function App() {
             <br />
             <button
               onClick={handleBackHome}
-              style={{ marginTop: 10, color: 'var(--accent)', textDecoration: 'underline', fontFamily: 'Inter', fontSize: 13 }}
+              style={{
+                marginTop: 10,
+                color: 'var(--accent)',
+                textDecoration: 'underline',
+                fontFamily: 'Inter',
+                fontSize: 13,
+              }}
             >
               ← Back to home
             </button>
@@ -151,7 +184,13 @@ export function App() {
             <br />
             <button
               onClick={handleTryAgain}
-              style={{ marginTop: 12, color: 'var(--accent)', textDecoration: 'underline', fontFamily: 'Inter', fontSize: 13 }}
+              style={{
+                marginTop: 12,
+                color: 'var(--accent)',
+                textDecoration: 'underline',
+                fontFamily: 'Inter',
+                fontSize: 13,
+              }}
             >
               Try again
             </button>
@@ -164,7 +203,11 @@ export function App() {
         <div className="board" style={{ paddingTop: 0 }}>
           <div
             className="error-card"
-            style={{ borderColor: 'var(--bd)', background: 'var(--raised)', color: 'var(--ts)' }}
+            style={{
+              borderColor: 'var(--bd)',
+              background: 'var(--raised)',
+              color: 'var(--ts)',
+            }}
           >
             Run stopped. Partial results shown above.
           </div>

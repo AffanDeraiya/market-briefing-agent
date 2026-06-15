@@ -174,7 +174,12 @@ export const useRunStore = create<RunState>((set, get) => ({
         // Update the matching tool_call step with result data
         const updated = get().log.map((s) => {
           if (s.type === 'tool_call' && s.seq === ev.data.seq) {
-            return { ...s, ok: ev.data.ok, summary: ev.data.summary, ms: ev.data.ms };
+            return {
+              ...s,
+              ok: ev.data.ok,
+              summary: ev.data.summary,
+              ms: ev.data.ms,
+            };
           }
           return s;
         });
@@ -227,10 +232,10 @@ export const useRunStore = create<RunState>((set, get) => ({
               brief: b,
               chartData: cd ?? undefined,
             };
-            const recents = [entry, ...loadRecents().filter((r) => r.ticker !== ticker)].slice(
-              0,
-              5
-            );
+            const recents = [
+              entry,
+              ...loadRecents().filter((r) => r.ticker !== ticker),
+            ].slice(0, 5);
             saveRecents(recents);
             set({ recents });
           }
@@ -320,47 +325,49 @@ export const useRunStore = create<RunState>((set, get) => ({
     });
 
     const doStream = (isRetry: boolean): Promise<void> =>
-      streamBrief({ ticker, period }, (ev) => get().applyEvent(ev), controller.signal).catch(
-        (e: unknown) => {
-          if (controller.signal.aborted) return;
+      streamBrief(
+        { ticker, period },
+        (ev) => get().applyEvent(ev),
+        controller.signal,
+      ).catch((e: unknown) => {
+        if (controller.signal.aborted) return;
 
-          // 429 rate-limit
-          if (e instanceof BriefStreamError && e.status === 429) {
-            set({
-              status: 'rate_limited',
-              error: null,
-              retryAfterS: e.retryAfter ?? null,
-            });
-            return;
-          }
-
-          // Network/connect error (no HTTP response) — server may be cold-starting
-          const isNetworkError =
-            !(e instanceof BriefStreamError) &&
-            e instanceof Error &&
-            (e.message === 'Failed to fetch' ||
-              e.message === 'Load failed' ||
-              e.name === 'TypeError');
-
-          if (isNetworkError && !isRetry) {
-            // Show server-waking state, auto-retry once after 5s
-            set({ status: 'server_waking', error: null });
-            const id = setTimeout(() => {
-              if (controller.signal.aborted) return;
-              // Reset to streaming before the retry
-              set({ status: 'streaming' });
-              void doStream(true);
-            }, 5000);
-            demoTimeoutIds.push(id);
-            return;
-          }
-
+        // 429 rate-limit
+        if (e instanceof BriefStreamError && e.status === 429) {
           set({
-            status: 'error',
-            error: e instanceof Error ? e.message : 'stream failed',
+            status: 'rate_limited',
+            error: null,
+            retryAfterS: e.retryAfter ?? null,
           });
+          return;
         }
-      );
+
+        // Network/connect error (no HTTP response) — server may be cold-starting
+        const isNetworkError =
+          !(e instanceof BriefStreamError) &&
+          e instanceof Error &&
+          (e.message === 'Failed to fetch' ||
+            e.message === 'Load failed' ||
+            e.name === 'TypeError');
+
+        if (isNetworkError && !isRetry) {
+          // Show server-waking state, auto-retry once after 5s
+          set({ status: 'server_waking', error: null });
+          const id = setTimeout(() => {
+            if (controller.signal.aborted) return;
+            // Reset to streaming before the retry
+            set({ status: 'streaming' });
+            void doStream(true);
+          }, 5000);
+          demoTimeoutIds.push(id);
+          return;
+        }
+
+        set({
+          status: 'error',
+          error: e instanceof Error ? e.message : 'stream failed',
+        });
+      });
 
     void doStream(false);
   },
@@ -377,11 +384,11 @@ export const useRunStore = create<RunState>((set, get) => ({
           e.event === 'tool_call' ||
           e.event === 'tool_result' ||
           e.event === 'anomaly_focus' ||
-          e.event === 'step'
+          e.event === 'step',
       ).map((e, idx) => {
         if (e.event === 'tool_call') {
           const result = DEMO_EVENTS.find(
-            (x) => x.event === 'tool_result' && x.data.seq === e.data.seq
+            (x) => x.event === 'tool_result' && x.data.seq === e.data.seq,
           );
           const rd = result?.event === 'tool_result' ? result.data : undefined;
           return {
@@ -438,7 +445,6 @@ export const useRunStore = create<RunState>((set, get) => ({
     });
   },
 }));
-
 
 // Re-export for convenience
 export { DEMO_BRIEF, MAX_TOOL_CALLS };

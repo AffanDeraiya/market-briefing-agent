@@ -73,7 +73,13 @@ describe('runStore lifecycle — new Phase-5 statuses', () => {
     // First trigger run_started so we're in streaming state
     applyEvent({
       event: 'run_started',
-      data: { run_id: 'x', ticker: 'AAPL', name: 'Apple', period: '3mo', model: 'm' },
+      data: {
+        run_id: 'x',
+        ticker: 'AAPL',
+        name: 'Apple',
+        period: '3mo',
+        model: 'm',
+      },
     });
 
     // Then fire the budget error event
@@ -93,7 +99,13 @@ describe('runStore lifecycle — new Phase-5 statuses', () => {
 
     applyEvent({
       event: 'run_started',
-      data: { run_id: 'x', ticker: 'AAPL', name: 'Apple', period: '3mo', model: 'm' },
+      data: {
+        run_id: 'x',
+        ticker: 'AAPL',
+        name: 'Apple',
+        period: '3mo',
+        model: 'm',
+      },
     });
 
     const errorEvent: BriefEvent = {
@@ -112,7 +124,13 @@ describe('runStore lifecycle — new Phase-5 statuses', () => {
 
     applyEvent({
       event: 'run_started',
-      data: { run_id: 'x', ticker: 'MSFT', name: 'Microsoft', period: '1y', model: 'm' },
+      data: {
+        run_id: 'x',
+        ticker: 'MSFT',
+        name: 'Microsoft',
+        period: '1y',
+        model: 'm',
+      },
     });
 
     applyEvent({
@@ -128,7 +146,9 @@ describe('runStore lifecycle — new Phase-5 statuses', () => {
 
   it('network error on first attempt → status becomes server_waking', async () => {
     // Simulate a TypeError (Failed to fetch) that signals the server isn't up
-    const networkErr = Object.assign(new TypeError('Failed to fetch'), { name: 'TypeError' });
+    const networkErr = Object.assign(new TypeError('Failed to fetch'), {
+      name: 'TypeError',
+    });
     mockStreamBrief.mockRejectedValueOnce(networkErr);
     // Second call (retry) can resolve immediately
     mockStreamBrief.mockResolvedValue(undefined);
@@ -141,16 +161,24 @@ describe('runStore lifecycle — new Phase-5 statuses', () => {
   });
 
   it('server_waking auto-retries after delay; on retry success → streaming', async () => {
-    const networkErr = Object.assign(new TypeError('Failed to fetch'), { name: 'TypeError' });
+    const networkErr = Object.assign(new TypeError('Failed to fetch'), {
+      name: 'TypeError',
+    });
     mockStreamBrief.mockRejectedValueOnce(networkErr);
     // Retry emits run_started so status goes to streaming
     mockStreamBrief.mockImplementationOnce(
       async (_req, onEvent: (ev: BriefEvent) => void): Promise<void> => {
         onEvent({
           event: 'run_started',
-          data: { run_id: 'r2', ticker: 'AAPL', name: 'Apple', period: '3mo', model: 'm' },
+          data: {
+            run_id: 'r2',
+            ticker: 'AAPL',
+            name: 'Apple',
+            period: '3mo',
+            model: 'm',
+          },
         });
-      }
+      },
     );
 
     useRunStore.getState().startRun('AAPL', '3mo');
@@ -169,7 +197,9 @@ describe('runStore lifecycle — new Phase-5 statuses', () => {
   });
 
   it('server_waking: if retry also fails → falls through to error', async () => {
-    const networkErr = Object.assign(new TypeError('Failed to fetch'), { name: 'TypeError' });
+    const networkErr = Object.assign(new TypeError('Failed to fetch'), {
+      name: 'TypeError',
+    });
     mockStreamBrief.mockRejectedValue(networkErr); // Both calls fail
 
     useRunStore.getState().startRun('AAPL', '3mo');
@@ -193,13 +223,28 @@ describe('runStore lifecycle — new Phase-5 statuses', () => {
     // Apply a full run: run_started → chart_data → brief → usage
     applyEvent({
       event: 'run_started',
-      data: { run_id: 'x', ticker: 'AAPL', name: 'Apple Inc.', period: '3mo', model: 'm' },
+      data: {
+        run_id: 'x',
+        ticker: 'AAPL',
+        name: 'Apple Inc.',
+        period: '3mo',
+        model: 'm',
+      },
     });
 
     applyEvent({
       event: 'chart_data',
       data: {
-        ohlcv: [{ date: '2025-01-01', open: 190, high: 195, low: 188, close: 193, volume: 1000000 }],
+        ohlcv: [
+          {
+            date: '2025-01-01',
+            open: 190,
+            high: 195,
+            low: 188,
+            close: 193,
+            volume: 1000000,
+          },
+        ],
         anomalies: [],
       },
     });
@@ -239,13 +284,21 @@ describe('runStore lifecycle — new Phase-5 statuses', () => {
         bear_case: [{ text: 'Slowing growth', citations: [] }],
         risks: [{ text: 'Macro risk', citations: [] }],
         citations: [],
-        disclaimer: 'Educational project. Not financial advice. Data via Yahoo Finance; may be delayed or inaccurate.',
+        disclaimer:
+          'Educational project. Not financial advice. Data via Yahoo Finance; may be delayed or inaccurate.',
       },
     });
 
     applyEvent({
       event: 'usage',
-      data: { input_tokens: 5000, output_tokens: 1200, est_cost_usd: 0, tool_calls: 5, iterations: 3, latency_ms: 18000 },
+      data: {
+        input_tokens: 5000,
+        output_tokens: 1200,
+        est_cost_usd: 0,
+        tool_calls: 5,
+        iterations: 3,
+        latency_ms: 18000,
+      },
     });
 
     const { recents } = useRunStore.getState();

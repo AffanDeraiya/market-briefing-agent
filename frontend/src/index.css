@@ -94,7 +94,9 @@
     align-items: stretch;
     background: var(--strip);
     border-bottom: 1px solid #0e1929;
-    font: 500 11px 'JetBrains Mono', monospace;
+    font:
+      500 11px 'JetBrains Mono',
+      monospace;
   }
 
   .strip .strip-label {
@@ -141,7 +143,9 @@
     color: var(--strip-tx);
     font-size: 10.5px;
     white-space: nowrap;
-    transition: background 0.2s, color 0.2s;
+    transition:
+      background 0.2s,
+      color 0.2s;
     cursor: default;
   }
 
@@ -239,7 +243,10 @@
     opacity: 0;
     visibility: hidden;
     transform: translateY(-5px);
-    transition: opacity 0.16s, transform 0.16s, visibility 0.16s;
+    transition:
+      opacity 0.16s,
+      transform 0.16s,
+      visibility 0.16s;
     pointer-events: none;
     font-family: 'Inter', sans-serif;
     text-transform: none;
@@ -359,7 +366,9 @@
     align-items: center;
     padding: 0 16px;
     color: #7a8fa0;
-    font: 500 10.5px 'JetBrains Mono', monospace;
+    font:
+      500 10.5px 'JetBrains Mono',
+      monospace;
     white-space: nowrap;
     background: none;
     border: none;
@@ -577,7 +586,9 @@
   }
 
   .sec-head h2 {
-    font: 600 18px 'Space Grotesk', sans-serif;
+    font:
+      600 18px 'Space Grotesk',
+      sans-serif;
     letter-spacing: -0.01em;
   }
 
@@ -603,7 +614,9 @@
     border-left: 3px solid var(--anom);
     border-radius: 12px;
     padding: 20px 22px;
-    transition: box-shadow 0.2s, border-color 0.2s;
+    transition:
+      box-shadow 0.2s,
+      border-color 0.2s;
   }
 
   .anom-panel.linked {
@@ -850,7 +863,9 @@
   }
 
   .home h1 {
-    font: 600 52px/1.05 'Space Grotesk', sans-serif;
+    font:
+      600 52px/1.05 'Space Grotesk',
+      sans-serif;
     letter-spacing: -0.025em;
     max-width: 15ch;
   }
@@ -1166,7 +1181,12 @@
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.6),
+      transparent
+    );
     animation: shimmer 1.1s infinite;
   }
 
@@ -1178,7 +1198,9 @@
 
   .tl-item {
     position: relative;
-    transition: opacity 0.4s ease, transform 0.4s ease;
+    transition:
+      opacity 0.4s ease,
+      transform 0.4s ease;
   }
 
   /* Chart crosshair tooltip */

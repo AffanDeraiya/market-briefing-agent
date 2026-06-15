@@ -7,20 +7,118 @@ export const DISCLAIMER =
 
 export const DEMO_CHART_DATA: ChartDataPayload = {
   ohlcv: [
-    { date: '2026-03-09', open: 248, high: 252, low: 246, close: 249.89, volume: 36930000 },
-    { date: '2026-03-16', open: 249, high: 251, low: 244, close: 247.76, volume: 223388900 },
-    { date: '2026-03-23', open: 247, high: 251, low: 246, close: 248.57, volume: 203871800 },
-    { date: '2026-03-30', open: 248, high: 258, low: 248, close: 255.68, volume: 160393100 },
-    { date: '2026-04-06', open: 255, high: 263, low: 254, close: 260.24, volume: 191923800 },
-    { date: '2026-04-13', open: 260, high: 272, low: 259, close: 269.98, volume: 239278200 },
-    { date: '2026-04-20', open: 270, high: 274, low: 268, close: 270.81, volume: 201605900 },
-    { date: '2026-04-27', open: 270, high: 282, low: 270, close: 279.88, volume: 283297200 },
-    { date: '2026-05-04', open: 279, high: 296, low: 279, close: 293.05, volume: 252233300 },
-    { date: '2026-05-11', open: 292, high: 303, low: 292, close: 300.23, volume: 230867400 },
-    { date: '2026-05-18', open: 300, high: 311, low: 299, close: 308.82, volume: 201591700 },
-    { date: '2026-05-25', open: 308, high: 315, low: 308, close: 312.06, volume: 216678600 },
-    { date: '2026-06-01', open: 312, high: 315, low: 305, close: 307.34, volume: 254400900 },
-    { date: '2026-06-08', open: 307, high: 308, low: 287, close: 291.13, volume: 282165800 },
+    {
+      date: '2026-03-09',
+      open: 248,
+      high: 252,
+      low: 246,
+      close: 249.89,
+      volume: 36930000,
+    },
+    {
+      date: '2026-03-16',
+      open: 249,
+      high: 251,
+      low: 244,
+      close: 247.76,
+      volume: 223388900,
+    },
+    {
+      date: '2026-03-23',
+      open: 247,
+      high: 251,
+      low: 246,
+      close: 248.57,
+      volume: 203871800,
+    },
+    {
+      date: '2026-03-30',
+      open: 248,
+      high: 258,
+      low: 248,
+      close: 255.68,
+      volume: 160393100,
+    },
+    {
+      date: '2026-04-06',
+      open: 255,
+      high: 263,
+      low: 254,
+      close: 260.24,
+      volume: 191923800,
+    },
+    {
+      date: '2026-04-13',
+      open: 260,
+      high: 272,
+      low: 259,
+      close: 269.98,
+      volume: 239278200,
+    },
+    {
+      date: '2026-04-20',
+      open: 270,
+      high: 274,
+      low: 268,
+      close: 270.81,
+      volume: 201605900,
+    },
+    {
+      date: '2026-04-27',
+      open: 270,
+      high: 282,
+      low: 270,
+      close: 279.88,
+      volume: 283297200,
+    },
+    {
+      date: '2026-05-04',
+      open: 279,
+      high: 296,
+      low: 279,
+      close: 293.05,
+      volume: 252233300,
+    },
+    {
+      date: '2026-05-11',
+      open: 292,
+      high: 303,
+      low: 292,
+      close: 300.23,
+      volume: 230867400,
+    },
+    {
+      date: '2026-05-18',
+      open: 300,
+      high: 311,
+      low: 299,
+      close: 308.82,
+      volume: 201591700,
+    },
+    {
+      date: '2026-05-25',
+      open: 308,
+      high: 315,
+      low: 308,
+      close: 312.06,
+      volume: 216678600,
+    },
+    {
+      date: '2026-06-01',
+      open: 312,
+      high: 315,
+      low: 305,
+      close: 307.34,
+      volume: 254400900,
+    },
+    {
+      date: '2026-06-08',
+      open: 307,
+      high: 308,
+      low: 287,
+      close: 291.13,
+      volume: 282165800,
+    },
   ],
   anomalies: [
     {
@@ -158,11 +256,17 @@ export const DEMO_BRIEF: MarketBrief = {
     },
   ],
   citations: [
-    { id: 'c1', kind: 'tool', title: 'Market-data tools (price, indicators, anomalies)', url: null },
+    {
+      id: 'c1',
+      kind: 'tool',
+      title: 'Market-data tools (price, indicators, anomalies)',
+      url: null,
+    },
     {
       id: 'c2',
       kind: 'news',
-      title: 'AAPL Stock Slides Following WWDC, But Analysts Broadly Raise Targets',
+      title:
+        'AAPL Stock Slides Following WWDC, But Analysts Broadly Raise Targets',
       url: 'https://www.macrumors.com/2026/06/11/aapl-stock-slides-following-wwdc/',
     },
     {
@@ -174,7 +278,7 @@ export const DEMO_BRIEF: MarketBrief = {
     {
       id: 'c4',
       kind: 'news',
-      title: "WWDC 2026: Apple makes its big Siri AI reveal",
+      title: 'WWDC 2026: Apple makes its big Siri AI reveal',
       url: 'https://www.cnbc.com/2026/06/08/apple-wwdc-2026-live-updates.html',
     },
     {
@@ -186,7 +290,8 @@ export const DEMO_BRIEF: MarketBrief = {
     {
       id: 'c6',
       kind: 'news',
-      title: "Apple reveals Siri AI, but Gene Munster asks: do they have the AI chops?",
+      title:
+        'Apple reveals Siri AI, but Gene Munster asks: do they have the AI chops?',
       url: 'https://www.msn.com/',
     },
     {
@@ -235,7 +340,11 @@ export const DEMO_EVENTS: BriefEvent[] = [
   },
   {
     event: 'tool_call',
-    data: { seq: 1, name: 'get_price_history', input: { ticker: 'AAPL', period: '3mo' } },
+    data: {
+      seq: 1,
+      name: 'get_price_history',
+      input: { ticker: 'AAPL', period: '3mo' },
+    },
   },
   {
     event: 'tool_result',
@@ -267,7 +376,11 @@ export const DEMO_EVENTS: BriefEvent[] = [
   },
   {
     event: 'tool_call',
-    data: { seq: 3, name: 'compute_indicators', input: { ticker: 'AAPL', period: '3mo' } },
+    data: {
+      seq: 3,
+      name: 'compute_indicators',
+      input: { ticker: 'AAPL', period: '3mo' },
+    },
   },
   {
     event: 'tool_result',
@@ -281,7 +394,11 @@ export const DEMO_EVENTS: BriefEvent[] = [
   },
   {
     event: 'tool_call',
-    data: { seq: 4, name: 'detect_anomalies', input: { ticker: 'AAPL', period: '3mo' } },
+    data: {
+      seq: 4,
+      name: 'detect_anomalies',
+      input: { ticker: 'AAPL', period: '3mo' },
+    },
   },
   {
     event: 'tool_result',
@@ -302,7 +419,11 @@ export const DEMO_EVENTS: BriefEvent[] = [
     data: {
       seq: 5,
       name: 'get_company_news',
-      input: { query: 'Apple Inc. AAPL', from_date: '2026-06-06', to_date: '2026-06-12' },
+      input: {
+        query: 'Apple Inc. AAPL',
+        from_date: '2026-06-06',
+        to_date: '2026-06-12',
+      },
     },
   },
   {
