@@ -36,6 +36,7 @@ function buildSigmaMap(
 
 interface SectionWrapperProps {
   ready: boolean;
+  isStreaming: boolean;
   children: React.ReactNode;
   minHeight?: number;
   delay?: number;
@@ -43,6 +44,7 @@ interface SectionWrapperProps {
 
 function SectionWrapper({
   ready,
+  isStreaming,
   children,
   minHeight = 80,
   delay = 0,
@@ -63,6 +65,9 @@ function SectionWrapper({
     }
   }, [ready, delay]);
 
+  // When the run is no longer streaming and this section has no data, collapse it.
+  if (!ready && !isStreaming) return null;
+
   return (
     <div
       ref={ref}
@@ -73,7 +78,7 @@ function SectionWrapper({
         transition: 'opacity 0.4s ease, transform 0.4s ease',
       }}
     >
-      {!ready && <SkeletonVeil />}
+      {!ready && isStreaming && <SkeletonVeil />}
       {children}
     </div>
   );
@@ -91,7 +96,7 @@ export function Board({
   return (
     <div className="board">
       {/* Chart */}
-      <SectionWrapper ready={!!chartData} minHeight={260}>
+      <SectionWrapper ready={!!chartData} isStreaming={isStreaming} minHeight={260}>
         {chartData ? (
           <PriceChart chartData={chartData} period={period} ticker={ticker} />
         ) : (
@@ -100,7 +105,7 @@ export function Board({
       </SectionWrapper>
 
       {/* Snapshot bar */}
-      <SectionWrapper ready={!!brief} minHeight={60} delay={80}>
+      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={60} delay={80}>
         {brief ? (
           <SnapshotBar snapshot={brief.snapshot} period={period} />
         ) : (
@@ -109,7 +114,7 @@ export function Board({
       </SectionWrapper>
 
       {/* 52-week range bar */}
-      <SectionWrapper ready={!!brief} minHeight={70} delay={120}>
+      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={70} delay={120}>
         {brief ? (
           <RangeBar snapshot={brief.snapshot} />
         ) : (
@@ -118,7 +123,7 @@ export function Board({
       </SectionWrapper>
 
       {/* Section 01 — Technical read */}
-      <SectionWrapper ready={!!brief} minHeight={80} delay={160}>
+      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={80} delay={160}>
         {brief ? (
           <TechnicalRead brief={brief} />
         ) : (
@@ -127,7 +132,7 @@ export function Board({
       </SectionWrapper>
 
       {/* Section 02 — Anomaly investigated */}
-      <SectionWrapper ready={!!brief} minHeight={80} delay={200}>
+      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={80} delay={200}>
         {brief ? (
           <AnomalySection brief={brief} chartSigmas={sigmas} />
         ) : (
@@ -136,7 +141,7 @@ export function Board({
       </SectionWrapper>
 
       {/* Section 03 — News */}
-      <SectionWrapper ready={!!brief} minHeight={80} delay={240}>
+      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={80} delay={240}>
         {brief ? (
           <NewsList brief={brief} />
         ) : (
@@ -145,7 +150,7 @@ export function Board({
       </SectionWrapper>
 
       {/* Section 04 — Bull & bear */}
-      <SectionWrapper ready={!!brief} minHeight={80} delay={280}>
+      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={80} delay={280}>
         {brief ? (
           <BullBear brief={brief} />
         ) : (
@@ -154,7 +159,7 @@ export function Board({
       </SectionWrapper>
 
       {/* Section 05 — Risks */}
-      <SectionWrapper ready={!!brief} minHeight={80} delay={320}>
+      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={80} delay={320}>
         {brief ? (
           <Risks brief={brief} />
         ) : (
@@ -163,7 +168,7 @@ export function Board({
       </SectionWrapper>
 
       {/* Section 06 — Sources */}
-      <SectionWrapper ready={!!brief} minHeight={80} delay={360}>
+      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={80} delay={360}>
         {brief ? (
           <Sources brief={brief} />
         ) : (
@@ -171,7 +176,7 @@ export function Board({
         )}
       </SectionWrapper>
 
-      {/* Error / streaming hints */}
+      {/* Streaming hint */}
       {isStreaming && !brief && (
         <p
           style={{

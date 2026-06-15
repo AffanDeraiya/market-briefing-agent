@@ -147,54 +147,46 @@ export function App() {
         </div>
       )}
 
-      {/* Budget exhausted — special card with GitHub link */}
+      {/* Budget exhausted */}
       {isBudgetError && (
         <div className="board" style={{ paddingTop: 0 }}>
           <div className="error-card">
-            Daily demo budget exhausted — the repo is on GitHub{' '}
-            <a
-              href={GITHUB_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: 'var(--accent)', textDecoration: 'underline' }}
-            >
-              →
-            </a>
-            <br />
-            <button
-              onClick={handleBackHome}
-              style={{
-                marginTop: 10,
-                color: 'var(--accent)',
-                textDecoration: 'underline',
-                fontFamily: 'Inter',
-                fontSize: 13,
-              }}
-            >
-              ← Back to home
-            </button>
+            <div className="err-header">
+              <span className="err-icon">⚠</span>
+              <span className="err-title">Daily budget exhausted</span>
+            </div>
+            <p className="err-msg">
+              The demo's daily token budget has been reached. The project is open-source —
+              clone it and add your own key to keep running.{' '}
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="err-link"
+              >
+                View on GitHub →
+              </a>
+            </p>
+            <div className="err-actions">
+              <button className="err-btn-ghost" onClick={handleBackHome}>← Home</button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Normal error (parse / upstream / timeout / internal) — keep partial board visible */}
+      {/* Normal error (upstream rate-limit / parse / timeout / internal) */}
       {isNormalError && (
         <div className="board" style={{ paddingTop: 0 }}>
           <div className="error-card">
-            <strong>Something went wrong:</strong> {error}
-            <br />
-            <button
-              onClick={handleTryAgain}
-              style={{
-                marginTop: 12,
-                color: 'var(--accent)',
-                textDecoration: 'underline',
-                fontFamily: 'Inter',
-                fontSize: 13,
-              }}
-            >
-              Try again
-            </button>
+            <div className="err-header">
+              <span className="err-icon">⚠</span>
+              <span className="err-title">Run failed</span>
+            </div>
+            <p className="err-msg">{error}</p>
+            <div className="err-actions">
+              <button className="err-btn-primary" onClick={handleTryAgain}>↺ Try again</button>
+              <button className="err-btn-ghost" onClick={handleBackHome}>← Home</button>
+            </div>
           </div>
         </div>
       )}
@@ -215,11 +207,10 @@ export function App() {
         </div>
       )}
 
-      {/* Main board — always rendered when in run view, shows skeleton when streaming */}
+      {/* Main board — show while streaming/success, or when stopped/error with partial data */}
       {(status === 'streaming' ||
         status === 'success' ||
-        status === 'error' ||
-        status === 'stopped') && (
+        ((status === 'error' || status === 'stopped') && !!(brief || chartData))) && (
         <Board
           brief={brief}
           chartData={chartData}
@@ -229,11 +220,8 @@ export function App() {
         />
       )}
 
-      {/* Back to home — show in all terminal states */}
-      {(status === 'success' ||
-        status === 'stopped' ||
-        isNormalError ||
-        isBudgetError) && (
+      {/* Back to home — show after successful run or manual stop (error states have it in the card) */}
+      {(status === 'success' || status === 'stopped') && (
         <div style={{ textAlign: 'center', padding: '8px 0 24px' }}>
           <button
             onClick={handleBackHome}

@@ -1327,14 +1327,77 @@
 
   /* Error card */
   .error-card {
-    background: rgba(160, 32, 32, 0.06);
-    border: 1px solid rgba(160, 32, 32, 0.2);
-    border-radius: 12px;
-    padding: 20px 22px;
+    background: var(--panel);
+    border: 1px solid rgba(160, 32, 32, 0.18);
+    border-radius: 14px;
+    padding: 24px 26px;
     margin: 20px 0;
+  }
+
+  .err-header {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 10px;
+  }
+
+  .err-icon {
+    font-size: 17px;
     color: var(--neg);
-    font-size: 14px;
-    line-height: 1.6;
+    line-height: 1;
+  }
+
+  .err-title {
+    font: 600 14.5px 'Inter';
+    color: var(--tp);
+  }
+
+  .err-msg {
+    font: 400 13px 'JetBrains Mono';
+    color: var(--ts);
+    line-height: 1.65;
+    margin: 0 0 18px;
+  }
+
+  .err-link {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .err-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .err-btn-primary {
+    font: 600 13px 'Inter';
+    color: #fff;
+    background: var(--accent);
+    border-radius: 8px;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .err-btn-primary:hover {
+    opacity: 0.86;
+  }
+
+  .err-btn-ghost {
+    font: 500 13px 'Inter';
+    color: var(--ts);
+    background: var(--raised);
+    border: 1px solid var(--bd);
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .err-btn-ghost:hover {
+    color: var(--accent);
+    border-color: var(--accent);
   }
 
   /* Responsive */
