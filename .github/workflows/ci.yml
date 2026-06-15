@@ -24,6 +24,8 @@ jobs:
         run: uv run mypy
       - name: Tests (pytest)
         run: uv run pytest -q
+      - name: Eval gate (offline cassette replay)
+        run: uv run python -m evals.run_eval
 
   frontend:
     runs-on: ubuntu-latest

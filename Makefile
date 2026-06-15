@@ -1,7 +1,7 @@
 # Market Briefing Agent — dev targets (techspec §9)
 # Requires: uv (backend), npm (frontend), gitleaks (pre-commit)
 
-.PHONY: setup dev dev-backend dev-frontend lint test lint-backend lint-frontend test-backend test-frontend brief
+.PHONY: setup dev dev-backend dev-frontend lint test lint-backend lint-frontend test-backend test-frontend brief eval eval-live
 
 # Run the agent end-to-end from the CLI (reads backend/.env for the LLM key).
 #   make brief TICKER=AAPL PERIOD=3mo
@@ -42,3 +42,9 @@ test-backend:
 
 test-frontend:
 	cd frontend && npm run test
+
+eval:
+	cd backend && uv run python -m evals.run_eval
+
+eval-live:
+	cd backend && uv run python -m evals.record_cassettes && uv run python -m evals.run_eval

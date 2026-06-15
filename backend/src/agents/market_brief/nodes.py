@@ -110,6 +110,39 @@ def _maybe_emit_anomaly_focus(
         pass
 
 
+def _weekly_ohlcv(price_hist: dict[str, object]) -> list[dict[str, object]]:
+    """Build the chart's weekly OHLCV series from a get_price_history output.
+
+    The compact price-history payload only carries weekly close + volume, which is
+    all the close-line chart consumes; open/high/low are set equal to close so the
+    OHLCVPoint shape (schema.md / frontend types) is satisfied without inventing
+    candle ranges.  Pure transform over the recorded tool output — replay-safe.
+    """
+    weeks = price_hist.get("week_aggregates")
+    if not isinstance(weeks, list):
+        return []
+    ohlcv: list[dict[str, object]] = []
+    for w in weeks:
+        if not isinstance(w, dict):
+            continue
+        date_ = w.get("week_start")
+        close = w.get("close")
+        volume = w.get("volume")
+        if date_ is None or close is None:
+            continue
+        ohlcv.append(
+            {
+                "date": date_,
+                "open": close,
+                "high": close,
+                "low": close,
+                "close": close,
+                "volume": volume if volume is not None else 0,
+            }
+        )
+    return ohlcv
+
+
 def _post_tool_side_effects(
     state: RunState,
     tc_name: str,
@@ -129,18 +162,17 @@ def _post_tool_side_effects(
     except Exception:  # noqa: BLE001
         pass
 
-    try:
-        if tc_name == "get_price_history" and not is_error:
-            anomalies_list = [{"date": d, "kind": k} for d, k in state.anomaly_dates.items()]
-            emit(EVENT_CHART_DATA, {"ohlcv": [], "anomalies": anomalies_list})
-    except Exception:  # noqa: BLE001
-        pass
-
     # Capture structured tool outputs for deterministic brief enrichment.
     # 52-week low/high come from get_price_history; indicators from compute_indicators.
+    # Also emit the weekly price series for the chart, built deterministically from
+    # the price-history output's week_aggregates (no extra network call; replay-safe).
     try:
         if tc_name == "get_price_history" and not is_error:
-            state.price_history_out = json.loads(content)
+            price_hist = json.loads(content)
+            state.price_history_out = price_hist
+            ohlcv = _weekly_ohlcv(price_hist)
+            anomalies_list = [{"date": d, "kind": k} for d, k in state.anomaly_dates.items()]
+            emit(EVENT_CHART_DATA, {"ohlcv": ohlcv, "anomalies": anomalies_list})
     except Exception:  # noqa: BLE001
         pass
 

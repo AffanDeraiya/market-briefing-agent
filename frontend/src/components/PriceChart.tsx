@@ -61,7 +61,10 @@ function CrossTip({ active, payload }: CrossTipProps) {
   const close = pt.close != null ? `$${pt.close.toFixed(2)}` : '—';
 
   return (
-    <div className="cross-tip" style={{ opacity: 1, position: 'relative', transform: 'none' }}>
+    <div
+      className="cross-tip"
+      style={{ opacity: 1, position: 'relative', transform: 'none' }}
+    >
       <span className="cl">{pt.label}</span> {close} ·{' '}
       <span className="cl">vol</span> {vol}
     </div>
@@ -78,7 +81,14 @@ interface AnomalyPinProps {
   onMouseLeave: () => void;
 }
 
-function AnomalyPin({ cx = 0, cy = 0, label, isLinked, onMouseEnter, onMouseLeave }: AnomalyPinProps) {
+function AnomalyPin({
+  cx = 0,
+  cy = 0,
+  label,
+  isLinked,
+  onMouseEnter,
+  onMouseLeave,
+}: AnomalyPinProps) {
   const calloutW = 132;
   const calloutH = 22;
   const pinHeight = 36;
@@ -142,11 +152,20 @@ export function PriceChart({ chartData, period, ticker }: Props) {
   const pts = toChartPoints(chartData.ohlcv);
   const n = pts.length;
 
-  // Anomaly — resolved before any early return so hook order is stable
+  // Anomaly — resolved before any early return so hook order is stable.
+  // Weekly points are keyed by week_start; a daily anomaly date rarely matches one
+  // exactly, so fall back to the week that *contains* the anomaly (latest week_start
+  // on or before the anomaly date), then to the last point.
   const anomaly = chartData.anomalies[0];
   const anomalyDate = anomaly?.date;
+  const containingWeek =
+    anomalyDate !== undefined
+      ? pts.filter((p) => p.date <= anomalyDate).at(-1)
+      : undefined;
   const anomalyPoint =
-    pts.find((p) => p.date === anomalyDate) ?? (anomaly && n > 0 ? pts[n - 1] : undefined);
+    pts.find((p) => p.date === anomalyDate) ??
+    containingWeek ??
+    (anomaly && n > 0 ? pts[n - 1] : undefined);
 
   const handleAnomalyEnter = useCallback(() => {
     if (anomalyDate) setHoveredAnomaly(anomalyDate);
