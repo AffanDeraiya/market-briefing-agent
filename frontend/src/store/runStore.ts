@@ -217,8 +217,11 @@ export const useRunStore = create<RunState>((set, get) => ({
         set({ brief: ev.data });
         break;
 
-      case 'usage':
-        set({ usage: ev.data, status: 'success' });
+      case 'usage': {
+        // Only advance to 'success' if there's a brief — an error event that
+        // arrived just before this must not be overwritten by the usage flush.
+        const prevStatus = get().status;
+        set({ usage: ev.data, status: prevStatus === 'error' ? 'error' : 'success' });
         // Save to recents (including chartData so loadRecent can fully restore)
         {
           const { brief: b, ticker, name, period, chartData: cd } = get();
@@ -241,6 +244,7 @@ export const useRunStore = create<RunState>((set, get) => ({
           }
         }
         break;
+      }
 
       case 'error':
         // budget exhaustion gets its own dedicated status so the UI can
