@@ -94,3 +94,30 @@ def test_fundamentals_nulls_never_invented() -> None:
     assert out.pe_trailing is None
     assert out.market_cap is None
     assert out.next_earnings_date is None
+
+
+# ---------------------------------------------------------------------------
+# #10 — LLM-supplied ticker/period must not escape the cache dir or hit yfinance
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "bad",
+    ["../../etc/passwd", "..\\..\\win", "a/b", "", "AB CD", "x" * 16, "drop;table"],
+)
+def test_fetch_ohlcv_rejects_unsafe_ticker(bad: str) -> None:
+    """Path-traversal / oversized / illegal ticker strings raise before any I/O."""
+    with pytest.raises(market_data.TickerNotFoundError):
+        market_data.fetch_ohlcv(bad, "1mo")
+    assert FakeTicker.history_calls == 0  # never reached yfinance
+
+
+def test_fetch_ohlcv_rejects_unsafe_period() -> None:
+    with pytest.raises(market_data.TickerNotFoundError):
+        market_data.fetch_ohlcv("AAPL", "../1mo")  # type: ignore[arg-type]
+    assert FakeTicker.history_calls == 0
+
+
+def test_fetch_info_rejects_unsafe_ticker() -> None:
+    with pytest.raises(market_data.TickerNotFoundError):
+        market_data.fetch_info("../../secret")

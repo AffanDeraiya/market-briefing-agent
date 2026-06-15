@@ -12,6 +12,7 @@ import contextlib
 import json
 import math
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -20,10 +21,30 @@ import pandas as pd
 import yfinance as yf
 from pydantic import BaseModel
 
-from ..state import CACHE_TTL_HOURS, Period
+from ..state import CACHE_TTL_HOURS, PERIODS, Period
 
 _BACKEND_ROOT = Path(__file__).resolve().parents[4]
 OHLCV_COLUMNS = ["Open", "High", "Low", "Close", "Volume"]
+
+# Tool inputs (ticker/period) come from the LLM and are NOT guaranteed to have
+# passed the API-layer TICKER_RE, yet they are interpolated into cache file
+# paths and the upstream symbol. Re-validate here (the single choke point all
+# tools funnel through) to prevent path traversal / arbitrary cache keys (#10).
+_SAFE_TICKER_RE = re.compile(r"^[A-Za-z0-9.\-]{1,15}$")
+
+
+def _safe_ticker(ticker: str) -> str:
+    """Uppercase a ticker after asserting it is path-safe; raise otherwise."""
+    if not isinstance(ticker, str) or not _SAFE_TICKER_RE.match(ticker):
+        raise TickerNotFoundError(f"invalid ticker symbol: {ticker!r}")
+    return ticker.upper()
+
+
+def _safe_period(period: str) -> str:
+    """Assert a period is one of the allowed values before using it in a path."""
+    if period not in PERIODS:
+        raise TickerNotFoundError(f"invalid period: {period!r}")
+    return period
 
 
 class TickerNotFoundError(ValueError):
@@ -105,7 +126,9 @@ def _evict_cache_if_needed() -> None:
 
 def fetch_ohlcv(ticker: str, period: Period) -> pd.DataFrame:
     """OHLCV frame for ticker/period, cached on disk for 24h."""
-    cached = cache_dir() / f"{ticker.upper()}_{period}.parquet"
+    ticker = _safe_ticker(ticker)
+    period = _safe_period(period)  # type: ignore[assignment]
+    cached = cache_dir() / f"{ticker}_{period}.parquet"
     if _is_fresh(cached):
         cached_df: pd.DataFrame = pd.read_parquet(cached)
         return cached_df
@@ -126,7 +149,8 @@ def fetch_ohlcv(ticker: str, period: Period) -> pd.DataFrame:
 
 def fetch_info(ticker: str) -> dict[str, Any]:
     """Raw yfinance info dict, cached on disk for 24h. Empty dict on upstream failure."""
-    cached = cache_dir() / f"{ticker.upper()}_info.json"
+    ticker = _safe_ticker(ticker)
+    cached = cache_dir() / f"{ticker}_info.json"
     if _is_fresh(cached):
         loaded: dict[str, Any] = json.loads(cached.read_text(encoding="utf-8"))
         return loaded
