@@ -60,12 +60,14 @@ export async function streamBrief(
 
     buf += decoder.decode(value, { stream: true });
 
-    // SSE framing: split on double newline
-    const parts = buf.split(/\n\n/);
+    // SSE framing: split on double newline.
+    // sse-starlette ≥3.x defaults to \r\n line endings so the frame
+    // boundary is \r\n\r\n, not \n\n.  Handle both to be safe.
+    const parts = buf.split(/\r?\n\r?\n/);
     buf = parts.pop() ?? ''; // last incomplete chunk
 
     for (const part of parts) {
-      const lines = part.split('\n');
+      const lines = part.split(/\r?\n/);
       let eventName = '';
       let dataLine = '';
 
@@ -73,7 +75,8 @@ export async function streamBrief(
         if (line.startsWith('event: ')) {
           eventName = line.slice(7).trim();
         } else if (line.startsWith('data: ')) {
-          dataLine = line.slice(6);
+          // trimEnd() strips a trailing \r when the server sends CRLF lines
+          dataLine = line.slice(6).trimEnd();
         }
       }
 
