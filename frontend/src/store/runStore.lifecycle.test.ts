@@ -142,6 +142,35 @@ describe('runStore lifecycle — new Phase-5 statuses', () => {
     expect(useRunStore.getState().error).toBe('Run timed out after 120s');
   });
 
+  // ---- Task 1b-extra: error event followed immediately by usage event ---------
+  // The backend ALWAYS emits usage after error (for accounting). The usage
+  // handler must not overwrite the error status with 'success'.
+
+  it('error event followed by usage event → status stays error', () => {
+    const { applyEvent } = useRunStore.getState();
+
+    applyEvent({
+      event: 'run_started',
+      data: { run_id: 'x', ticker: 'NVDA', name: 'NVIDIA', period: '3mo', model: 'm' },
+    });
+
+    applyEvent({
+      event: 'error',
+      data: { kind: 'upstream', message: 'LLM provider rate limit reached. Please wait a few minutes and try again.' },
+    });
+
+    // usage always follows error from the backend — must not overwrite error status
+    applyEvent({
+      event: 'usage',
+      data: { input_tokens: 0, output_tokens: 0, est_cost_usd: 0, tool_calls: 0, iterations: 0, latency_ms: 141 },
+    });
+
+    const state = useRunStore.getState();
+    expect(state.status).toBe('error');
+    expect(state.error).toBe('LLM provider rate limit reached. Please wait a few minutes and try again.');
+    expect(state.usage).not.toBeNull(); // usage data IS stored
+  });
+
   // ---- Task 1c: network/connect error → server_waking then retry -------------
 
   it('network error on first attempt → status becomes server_waking', async () => {

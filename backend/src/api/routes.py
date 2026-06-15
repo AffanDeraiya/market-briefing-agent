@@ -79,7 +79,7 @@ async def post_brief(request: Request, body: BriefRequest) -> EventSourceRespons
         )
 
     # Pass the client IP into the stream so it can release the inflight slot on exit.
-    return EventSourceResponse(brief_event_stream(ticker, body.period, ip))
+    return EventSourceResponse(brief_event_stream(ticker, body.period, ip), sep="\n")
 
 
 # slowapi requires `request: Request` as the FIRST parameter on rate-limited endpoints.
