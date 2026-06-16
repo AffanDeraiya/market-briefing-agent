@@ -21,7 +21,6 @@ export interface ChartAnomaly {
   date: string;
   kind: 'price_spike' | 'price_drop' | 'volume_surge' | 'gap';
   magnitude: string;
-  sigma?: string;
   severity: 'high' | 'medium';
 }
 
@@ -61,6 +60,9 @@ export interface ChartDataPayload {
 export interface AnomalyFocusPayload {
   date: string;
   kind: 'price_spike' | 'price_drop' | 'volume_surge' | 'gap';
+  magnitude?: string;
+  sigma?: string;
+  severity?: 'high' | 'medium';
 }
 
 export interface UsagePayload {
@@ -104,9 +106,10 @@ export interface Snapshot {
   change_1d: number;
   change_1m: number;
   change_period: number;
-  market_cap: string;
+  market_cap: number | null;
   pe: number | null;
   sector: string;
+  currency: string | null;
   low_52w: number;
   high_52w: number;
 }
@@ -164,6 +167,9 @@ export interface LogStep {
   // anomaly_focus
   date?: string;
   kind?: string;
+  magnitude?: string;
+  sigma?: string;
+  severity?: 'high' | 'medium';
   // thinking/compose
   iteration?: number;
   thinking?: string;

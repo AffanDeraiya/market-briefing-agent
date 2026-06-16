@@ -126,6 +126,21 @@
     min-width: 0;
     overflow-x: auto;
     scrollbar-width: none;
+    /* Bug #1: fade gradient masks hinting more content to scroll */
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black 24px,
+      black calc(100% - 24px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black 24px,
+      black calc(100% - 24px),
+      transparent 100%
+    );
   }
 
   .strip .steps::-webkit-scrollbar {
@@ -227,7 +242,7 @@
     color: #cdddea;
   }
 
-  /* Hover card (shared) */
+  /* Hover card (shared) — legacy inline positioning kept for non-strip uses */
   .pop {
     position: absolute;
     z-index: 60;
@@ -284,6 +299,32 @@
   .pop.right::before {
     left: auto;
     right: 22px;
+  }
+
+  /* Bug #2: portal-rendered pop card — position:fixed via inline style;
+     shares visual styling with .pop but is always visible when rendered. */
+  .pop-portal {
+    /* position:fixed set via React inline style */
+    z-index: 9999;
+    background: var(--panel);
+    color: var(--tp);
+    border: 1px solid var(--bd);
+    border-radius: 10px;
+    box-shadow: 0 14px 38px rgba(20, 22, 28, 0.22);
+    padding: 13px 14px;
+    font-family: 'Inter', sans-serif;
+    text-transform: none;
+    letter-spacing: 0;
+    /* Small caret arrow pointing up */
+  }
+
+  .pop-portal::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 22px;
+    border: 6px solid transparent;
+    border-bottom-color: var(--bd);
   }
 
   .pop .ph {
@@ -612,6 +653,13 @@
     color: var(--ts);
   }
 
+  /* Anomaly card list — flex column with gap so cards don't merge (#4) */
+  .anom-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
   .anom-panel {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -929,6 +977,12 @@
     font: 500 13px 'Inter';
     color: var(--pos);
     white-space: nowrap;
+    /* Bug #6: constrain so long names (e.g. "NVIDIA Corporation · NasdaqGS")
+       don't collide with the right edge of the input box. */
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
   }
 
   .home .chips {
@@ -990,8 +1044,14 @@
     gap: 9px;
   }
 
-  .home .gen:hover {
+  .home .gen:hover:not(:disabled) {
     opacity: 0.88;
+  }
+
+  /* Bug #5: disabled state when ticker not yet validated */
+  .home .gen:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
   /* Ticker autocomplete dropdown */

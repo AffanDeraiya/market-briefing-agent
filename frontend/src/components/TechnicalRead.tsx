@@ -2,6 +2,7 @@
 import type { MarketBrief } from '../lib/types';
 import { InlineCites } from './Citation';
 import { IndicatorChips } from './IndicatorChips';
+import { stripInlineCites } from '../lib/format';
 
 interface Props {
   brief: MarketBrief;
@@ -16,7 +17,7 @@ export function TechnicalRead({ brief }: Props) {
         <span className="rule" />
       </div>
       <p className="prose">
-        {brief.technical_summary}
+        {stripInlineCites(brief.technical_summary)}
         <InlineCites ids={['c1']} citations={brief.citations} />
       </p>
       <IndicatorChips indicators={brief.indicators} />

@@ -1,6 +1,7 @@
 // Section 05 — Key risks.
 import type { MarketBrief } from '../lib/types';
 import { InlineCites } from './Citation';
+import { stripInlineCites } from '../lib/format';
 
 interface Props {
   brief: MarketBrief;
@@ -18,7 +19,7 @@ export function Risks({ brief }: Props) {
         {brief.risks.map((b, i) => (
           <li key={i}>
             <span>
-              {b.text}
+              {stripInlineCites(b.text)}
               <InlineCites ids={b.citations} citations={brief.citations} />
             </span>
           </li>

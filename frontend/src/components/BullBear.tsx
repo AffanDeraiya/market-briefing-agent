@@ -1,6 +1,7 @@
 // Section 04 — Bull & bear (two-column layout).
 import type { MarketBrief } from '../lib/types';
 import { InlineCites } from './Citation';
+import { stripInlineCites } from '../lib/format';
 
 interface Props {
   brief: MarketBrief;
@@ -21,7 +22,7 @@ export function BullBear({ brief }: Props) {
             {brief.bull_case.map((b, i) => (
               <li key={i}>
                 <span>
-                  {b.text}
+                  {stripInlineCites(b.text)}
                   <InlineCites ids={b.citations} citations={brief.citations} />
                 </span>
               </li>
@@ -34,7 +35,7 @@ export function BullBear({ brief }: Props) {
             {brief.bear_case.map((b, i) => (
               <li key={i}>
                 <span>
-                  {b.text}
+                  {stripInlineCites(b.text)}
                   <InlineCites ids={b.citations} citations={brief.citations} />
                 </span>
               </li>

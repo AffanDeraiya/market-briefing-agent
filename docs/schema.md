@@ -68,6 +68,17 @@ out: {anomalies: [{date, kind: "price_spike"|"price_drop"|"volume_surge"|"gap",
                    severity: "high"|"medium"}],
       detector_config: {return_sigma: 2.5, volume_mult: 3.0, gap_pct: 4.0}}
 ```
+
+`chart_data.anomalies[]` item shape (used for chart pins):
+```
+{date: str, kind: str, magnitude: str|null, severity: "high"|"medium"|null}
+```
+
+`anomaly_focus` payload (emitted when the agent investigates an anomaly):
+```
+{date: str, kind: str, magnitude?: str, severity?: "high"|"medium"}
+```
+`magnitude` and `severity` are present once `detect_anomalies` has run.
 Rules: daily |return| > 2.5σ of period; volume > 3× trailing 30d avg; open-vs-prev-close gap > 4%. Max 8 returned, severity-sorted. Pure function over cached OHLCV; unit-tested against fixtures.
 
 ### get_company_news
@@ -98,8 +109,8 @@ Request: `{"ticker": "AAPL", "period": "3mo"}`
 | `step` | `{iteration, thinking: str}` | model's text preceding tool calls, truncated 300 chars |
 | `tool_call` | `{seq, name, input: {...}}` | |
 | `tool_result` | `{seq, name, ok: bool, summary: str, ms: int}` | summary ≤200 chars; full payload NOT sent (token/log hygiene) except `chart_data` below |
-| `chart_data` | `{ohlcv: [...], anomalies: [...]}` | sent once after price history loads; feeds the chart |
-| `anomaly_focus` | `{date, kind}` | emitted when agent starts investigating an anomaly; UI highlights marker |
+| `chart_data` | `{ohlcv: [...], anomalies: [...]}` | sent twice: once (empty anomalies) after price history loads, then again after `detect_anomalies` with full anomaly objects; feeds the chart |
+| `anomaly_focus` | `{date, kind, magnitude?, severity?}` | emitted when agent starts investigating an anomaly; UI highlights marker; `magnitude`/`severity` present when `detect_anomalies` has already run |
 | `brief` | full MarketBrief (§4) | terminal-success |
 | `usage` | `{input_tokens, output_tokens, est_cost_usd, tool_calls, iterations, latency_ms}` | always before close |
 | `error` | `{kind: "validation"|"budget"|"timeout"|"parse"|"upstream"|"internal", message}` | terminal-failure |
@@ -127,7 +138,9 @@ class Bullet(BaseModel):
 
 class MarketBrief(BaseModel):
     ticker: str; name: str; as_of: str; period: str
-    snapshot: dict           # price, change_1d/1m/period, market_cap, pe, sector, low_52w, high_52w
+    snapshot: dict           # price, change_1d/1m/period, currency, market_cap, pe, sector, low_52w, high_52w
+                             # all numeric fields attached deterministically from tool outputs
+                             # by attach_market_data(); the LLM only authors "sector"
     indicators: dict         # rsi14, rsi_signal, annualized_vol_pct, max_drawdown_pct,
                              #   sma20_vs_price, sma50_vs_price, volume_trend
     technical_summary: str   # 2-3 sentences, cites "tool" citations

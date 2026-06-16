@@ -30,6 +30,8 @@ export interface RecentBrief {
   as_of: string;
   brief: MarketBrief;
   chartData?: ChartDataPayload;
+  /** Epoch ms at which this run was saved — use Date.now() for relative labels. */
+  savedAt: number;
 }
 
 const RECENTS_KEY = 'mba.recents';
@@ -197,6 +199,9 @@ export const useRunStore = create<RunState>((set, get) => ({
           type: 'anomaly_focus',
           date: ev.data.date,
           kind: ev.data.kind,
+          magnitude: ev.data.magnitude,
+          sigma: ev.data.sigma,
+          severity: ev.data.severity,
         };
         set({ log: [...get().log, step] });
         break;
@@ -221,9 +226,11 @@ export const useRunStore = create<RunState>((set, get) => ({
         // Only advance to 'success' if there's a brief — an error event that
         // arrived just before this must not be overwritten by the usage flush.
         const prevStatus = get().status;
-        set({ usage: ev.data, status: prevStatus === 'error' ? 'error' : 'success' });
-        // Save to recents (including chartData so loadRecent can fully restore)
-        {
+        const nextStatus = prevStatus === 'error' ? 'error' : 'success';
+        set({ usage: ev.data, status: nextStatus });
+        // Save to recents only when the run truly succeeded with a valid brief.
+        // Bug #16: skip saving on error / stopped / rate_limited states.
+        if (nextStatus === 'success') {
           const { brief: b, ticker, name, period, chartData: cd } = get();
           if (b) {
             const entry: RecentBrief = {
@@ -234,6 +241,7 @@ export const useRunStore = create<RunState>((set, get) => ({
               as_of: b.as_of,
               brief: b,
               chartData: cd ?? undefined,
+              savedAt: Date.now(),
             };
             const recents = [
               entry,

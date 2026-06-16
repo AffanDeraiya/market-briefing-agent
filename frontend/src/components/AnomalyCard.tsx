@@ -1,6 +1,7 @@
 // Section 02 — Anomaly investigated.
 import type { Anomaly, Citation } from '../lib/types';
 import { InlineCites } from './Citation';
+import { stripInlineCites } from '../lib/format';
 import { useRunStore } from '../store/runStore';
 
 interface Props {
@@ -37,7 +38,7 @@ export function AnomalyCard({ anomaly, sigma, citations }: Props) {
   const setHoveredAnomaly = useRunStore((s) => s.setHoveredAnomaly);
   const isLinked = hoveredAnomaly === anomaly.date;
 
-  // Extract sigma from magnitude string if not provided
+  // sigma may be passed externally; keep rendering it if provided
   const displaySigma = sigma ?? '';
 
   return (
@@ -54,7 +55,7 @@ export function AnomalyCard({ anomaly, sigma, citations }: Props) {
       </div>
       <div className="body">
         <p className="expl">
-          {anomaly.explanation}
+          {stripInlineCites(anomaly.explanation)}
           <InlineCites ids={anomaly.citations} citations={citations} />
         </p>
         <ConfRow confidence={anomaly.confidence} />
@@ -91,14 +92,16 @@ export function AnomalySection({ brief, chartSigmas }: SectionProps) {
         <h2>Anomaly investigated</h2>
         <span className="rule" />
       </div>
-      {brief.anomalies.map((a) => (
-        <AnomalyCard
-          key={a.date}
-          anomaly={a}
-          sigma={chartSigmas?.[a.date]}
-          citations={brief.citations}
-        />
-      ))}
+      <div className="anom-list">
+        {brief.anomalies.map((a) => (
+          <AnomalyCard
+            key={a.date}
+            anomaly={a}
+            sigma={chartSigmas?.[a.date]}
+            citations={brief.citations}
+          />
+        ))}
+      </div>
     </div>
   );
 }

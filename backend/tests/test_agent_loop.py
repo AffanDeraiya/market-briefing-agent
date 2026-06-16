@@ -398,3 +398,210 @@ def test_attach_market_data_noop_without_tool_outputs() -> None:
 
     assert brief.indicators == {}
     assert "low_52w" not in brief.snapshot
+
+
+def test_attach_market_data_price_history_fields() -> None:
+    """attach_market_data overwrites price/change/currency from price_history_out."""
+    from src.agents.market_brief.nodes import attach_market_data
+    from src.agents.market_brief.state import RunState
+    from src.schemas import parse_brief
+
+    brief = parse_brief(_VALID_BRIEF_DICT)
+    state = RunState(ticker="AAPL", period="6mo")
+    state.price_history_out = {
+        "latest_close": 191.23,
+        "change_pct": {"d1": 1.5, "m1": -3.2, "period": 7.8},
+        "currency": "USD",
+        "low_52w": 160.0,
+        "high_52w": 220.0,
+    }
+
+    attach_market_data(state, brief)
+
+    assert brief.snapshot["price"] == 191.23
+    assert brief.snapshot["change_1d"] == 1.5
+    assert brief.snapshot["change_1m"] == -3.2
+    assert brief.snapshot["change_period"] == 7.8
+    assert brief.snapshot["currency"] == "USD"
+    assert brief.snapshot["low_52w"] == 160.0
+    assert brief.snapshot["high_52w"] == 220.0
+
+
+def test_attach_market_data_fundamentals_fields() -> None:
+    """attach_market_data overwrites market_cap/pe/sector from fundamentals_out."""
+    from src.agents.market_brief.nodes import attach_market_data
+    from src.agents.market_brief.state import RunState
+    from src.schemas import parse_brief
+
+    brief = parse_brief(_VALID_BRIEF_DICT)
+    state = RunState(ticker="AAPL", period="6mo")
+    state.fundamentals_out = {
+        "market_cap": 3_000_000_000_000,
+        "pe_trailing": 29.5,
+        "pe_forward": 25.0,
+        "sector": "Technology",
+    }
+
+    attach_market_data(state, brief)
+
+    assert brief.snapshot["market_cap"] == 3_000_000_000_000
+    assert brief.snapshot["pe"] == 29.5  # trailing preferred over forward
+    assert brief.snapshot["sector"] == "Technology"
+
+
+def test_attach_market_data_fundamentals_pe_forward_fallback() -> None:
+    """When pe_trailing is None, pe falls back to pe_forward."""
+    from src.agents.market_brief.nodes import attach_market_data
+    from src.agents.market_brief.state import RunState
+    from src.schemas import parse_brief
+
+    brief = parse_brief(_VALID_BRIEF_DICT)
+    state = RunState(ticker="AAPL", period="6mo")
+    state.fundamentals_out = {
+        "market_cap": None,
+        "pe_trailing": None,
+        "pe_forward": 22.1,
+        "sector": None,
+    }
+
+    attach_market_data(state, brief)
+
+    assert brief.snapshot["pe"] == 22.1
+    # None market_cap: guard ensures we don't overwrite with None (original value preserved)
+    assert brief.snapshot.get("market_cap") == _VALID_BRIEF_DICT["snapshot"]["market_cap"]
+
+
+def test_post_tool_chart_data_reemit_after_detect_anomalies() -> None:
+    """After detect_anomalies, chart_data is re-emitted with full anomaly objects."""
+    from src.agents.market_brief.events import CollectingEmitter
+    from src.agents.market_brief.nodes import _post_tool_side_effects
+    from src.agents.market_brief.state import RunState
+
+    state = RunState(ticker="AAPL", period="3mo")
+    # Simulate price history already captured
+    state.price_history_out = {
+        "week_aggregates": [{"week_start": "2026-01-05", "close": 185.0, "volume": 1000000}],
+        "latest_close": 185.0,
+    }
+
+    emitter = CollectingEmitter()
+    detect_output = json.dumps(
+        {
+            "anomalies": [
+                {
+                    "date": "2026-01-10",
+                    "kind": "price_spike",
+                    "magnitude": "+5.2% (3.1σ)",
+                    "severity": "high",
+                }
+            ],
+            "detector_config": {"return_sigma": 2.5, "volume_mult": 3.0, "gap_pct": 4.0},
+        }
+    )
+
+    _post_tool_side_effects(state, "detect_anomalies", detect_output, False, emitter)
+
+    chart_events = [e for e in emitter.events if e[0] == "chart_data"]
+    assert len(chart_events) == 1, "expected one chart_data re-emit after detect_anomalies"
+    anomalies = chart_events[0][1]["anomalies"]
+    assert len(anomalies) == 1
+    assert anomalies[0]["date"] == "2026-01-10"
+    assert anomalies[0]["kind"] == "price_spike"
+    assert anomalies[0]["magnitude"] == "+5.2% (3.1σ)"
+    assert anomalies[0]["severity"] == "high"
+
+
+def test_post_tool_chart_data_no_reemit_without_price_history() -> None:
+    """If price history not yet captured, detect_anomalies does not emit chart_data."""
+    from src.agents.market_brief.events import CollectingEmitter
+    from src.agents.market_brief.nodes import _post_tool_side_effects
+    from src.agents.market_brief.state import RunState
+
+    state = RunState(ticker="AAPL", period="3mo")
+    # price_history_out is None — detect_anomalies arrives first
+
+    emitter = CollectingEmitter()
+    detect_output = json.dumps(
+        {
+            "anomalies": [
+                {
+                    "date": "2026-01-10",
+                    "kind": "price_spike",
+                    "magnitude": "+5%",
+                    "severity": "high",
+                }
+            ],
+            "detector_config": {},
+        }
+    )
+
+    _post_tool_side_effects(state, "detect_anomalies", detect_output, False, emitter)
+
+    chart_events = [e for e in emitter.events if e[0] == "chart_data"]
+    assert len(chart_events) == 0, "should not emit chart_data without price history"
+
+
+def test_anomaly_focus_enriched_payload() -> None:
+    """_maybe_emit_anomaly_focus includes magnitude/severity from anomalies_detail."""
+    from src.agents.market_brief.events import CollectingEmitter
+    from src.agents.market_brief.nodes import _maybe_emit_anomaly_focus
+    from src.agents.market_brief.state import RunState
+    from src.llm import ToolCall
+
+    state = RunState(ticker="AAPL", period="3mo")
+    state.anomaly_dates = {"2026-01-10": "price_spike"}
+    state.anomalies_detail = [
+        {
+            "date": "2026-01-10",
+            "kind": "price_spike",
+            "magnitude": "+5.2% (3.1σ)",
+            "severity": "high",
+        }
+    ]
+
+    tc = ToolCall(
+        id="tc1",
+        name="get_company_news",
+        input={"query": "AAPL", "from_date": "2026-01-07", "to_date": "2026-01-13"},
+    )
+
+    emitter = CollectingEmitter()
+    _maybe_emit_anomaly_focus(state, tc, emitter)
+
+    focus_events = [e for e in emitter.events if e[0] == "anomaly_focus"]
+    assert len(focus_events) == 1
+    payload = focus_events[0][1]
+    assert payload["date"] == "2026-01-10"
+    assert payload["kind"] == "price_spike"
+    assert payload["magnitude"] == "+5.2% (3.1σ)"
+    assert payload["severity"] == "high"
+
+
+def test_anomaly_focus_no_detail_emits_date_kind_only() -> None:
+    """_maybe_emit_anomaly_focus emits only date+kind when detail not found."""
+    from src.agents.market_brief.events import CollectingEmitter
+    from src.agents.market_brief.nodes import _maybe_emit_anomaly_focus
+    from src.agents.market_brief.state import RunState
+    from src.llm import ToolCall
+
+    state = RunState(ticker="AAPL", period="3mo")
+    state.anomaly_dates = {"2026-01-10": "price_drop"}
+    # No anomalies_detail populated yet
+
+    tc = ToolCall(
+        id="tc1",
+        name="get_company_news",
+        input={"query": "AAPL", "from_date": "2026-01-08", "to_date": "2026-01-12"},
+    )
+
+    emitter = CollectingEmitter()
+    _maybe_emit_anomaly_focus(state, tc, emitter)
+
+    focus_events = [e for e in emitter.events if e[0] == "anomaly_focus"]
+    assert len(focus_events) == 1
+    payload = focus_events[0][1]
+    assert payload["date"] == "2026-01-10"
+    assert payload["kind"] == "price_drop"
+    # magnitude/severity not present when detail is missing
+    assert "magnitude" not in payload
+    assert "severity" not in payload
