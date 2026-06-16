@@ -103,11 +103,21 @@ def _maybe_emit_anomaly_focus(
         from_date = date.fromisoformat(from_raw.strip())
         to_date = date.fromisoformat(to_raw.strip())
 
+        # Build a lookup from anomalies_detail for enriched payload
+        detail_by_date: dict[str, dict[str, Any]] = {
+            det["date"]: det for det in state.anomalies_detail if "date" in det
+        }
+
         for d_str, kind in state.anomaly_dates.items():
             try:
                 d = date.fromisoformat(d_str)
                 if from_date <= d <= to_date:
-                    emit(EVENT_ANOMALY_FOCUS, {"date": d_str, "kind": kind})
+                    detail = detail_by_date.get(d_str, {})
+                    payload: dict[str, Any] = {"date": d_str, "kind": kind}
+                    for field in ("magnitude", "sigma", "severity"):
+                        if field in detail:
+                            payload[field] = detail[field]
+                    emit(EVENT_ANOMALY_FOCUS, payload)
             except (ValueError, TypeError):
                 pass
     except Exception:  # noqa: BLE001
@@ -170,20 +180,49 @@ def _post_tool_side_effects(
                 kind = a.get("kind", "")
                 if d_str and kind:
                     state.anomaly_dates[d_str] = kind
+                # Store full anomaly detail (date, kind, magnitude, severity)
+                detail: dict[str, Any] = {}
+                for field in ("date", "kind", "magnitude", "severity"):
+                    if field in a:
+                        detail[field] = a[field]
+                if detail.get("date") and detail.get("kind"):
+                    state.anomalies_detail.append(detail)
+            # Re-emit chart_data with full anomaly objects now that we have them.
+            # If price history hasn't been captured yet, skip gracefully.
+            if state.price_history_out:
+                try:
+                    ohlcv = _weekly_ohlcv(state.price_history_out)
+                    anomalies_list = [
+                        {
+                            "date": d.get("date", ""),
+                            "kind": d.get("kind", ""),
+                            "magnitude": d.get("magnitude"),
+                            "severity": d.get("severity"),
+                        }
+                        for d in state.anomalies_detail
+                    ]
+                    emit(EVENT_CHART_DATA, {"ohlcv": ohlcv, "anomalies": anomalies_list})
+                except Exception:  # noqa: BLE001
+                    pass
     except Exception:  # noqa: BLE001
         pass
 
     # Capture structured tool outputs for deterministic brief enrichment.
     # 52-week low/high come from get_price_history; indicators from compute_indicators.
-    # Also emit the weekly price series for the chart, built deterministically from
-    # the price-history output's week_aggregates (no extra network call; replay-safe).
+    # Also emit the weekly price series for the chart early (anomalies list will be
+    # empty here; a second emit with full anomaly objects follows after detect_anomalies).
     try:
         if tc_name == "get_price_history" and not is_error:
             price_hist = json.loads(content)
             state.price_history_out = price_hist
             ohlcv = _weekly_ohlcv(price_hist)
-            anomalies_list = [{"date": d, "kind": k} for d, k in state.anomaly_dates.items()]
-            emit(EVENT_CHART_DATA, {"ohlcv": ohlcv, "anomalies": anomalies_list})
+            emit(EVENT_CHART_DATA, {"ohlcv": ohlcv, "anomalies": []})
+    except Exception:  # noqa: BLE001
+        pass
+
+    try:
+        if tc_name == "get_fundamentals" and not is_error:
+            state.fundamentals_out = json.loads(content)
     except Exception:  # noqa: BLE001
         pass
 
@@ -455,6 +494,32 @@ def attach_market_data(state: RunState, brief: MarketBrief) -> None:
         for key in ("low_52w", "high_52w"):
             if ph.get(key) is not None:
                 brief.snapshot[key] = ph[key]
+        # Deterministically overwrite price/change fields (LLM must not own these)
+        if ph.get("latest_close") is not None:
+            brief.snapshot["price"] = ph["latest_close"]
+        change_pct = ph.get("change_pct")
+        if isinstance(change_pct, dict):
+            if change_pct.get("d1") is not None:
+                brief.snapshot["change_1d"] = change_pct["d1"]
+            if change_pct.get("m1") is not None:
+                brief.snapshot["change_1m"] = change_pct["m1"]
+            if change_pct.get("period") is not None:
+                brief.snapshot["change_period"] = change_pct["period"]
+        if ph.get("currency") is not None:
+            brief.snapshot["currency"] = ph["currency"]
+
+    if state.fundamentals_out:
+        fund = state.fundamentals_out
+        if fund.get("market_cap") is not None:
+            brief.snapshot["market_cap"] = fund["market_cap"]
+        # prefer trailing P/E; fall back to forward
+        pe = fund.get("pe_trailing")
+        if pe is None:
+            pe = fund.get("pe_forward")
+        if pe is not None:
+            brief.snapshot["pe"] = pe
+        if fund.get("sector") is not None:
+            brief.snapshot["sector"] = fund["sector"]
 
 
 # ---------------------------------------------------------------------------

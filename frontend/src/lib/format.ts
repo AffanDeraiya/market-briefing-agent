@@ -19,12 +19,45 @@ export function changeClass(n: number): 'pos' | 'neg' | '' {
   return '';
 }
 
+/**
+ * Map ISO 4217 currency code to a display symbol.
+ * Falls back to raw code + space (e.g. "BRL ") if unrecognised.
+ * Returns '$' when code is null/undefined/empty.
+ */
+export function currencySymbol(code: string | null | undefined): string {
+  if (!code) return '$';
+  const map: Record<string, string> = {
+    USD: '$',
+    INR: '₹',
+    EUR: '€',
+    GBP: '£',
+    JPY: '¥',
+    CAD: 'C$',
+    AUD: 'A$',
+    HKD: 'HK$',
+    CNY: '¥',
+  };
+  return map[code.toUpperCase()] ?? code + ' ';
+}
+
 /** Format large numbers compactly: 4280000000000 → "$4.28T" */
-export function fmtCap(n: number): string {
-  if (n >= 1e12) return '$' + (n / 1e12).toFixed(2) + 'T';
-  if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
-  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
-  return '$' + n.toFixed(0);
+export function fmtCap(n: number | null | undefined, symbol = '$'): string {
+  if (n == null || isNaN(n)) return 'N/A';
+  if (n >= 1e12) return symbol + (n / 1e12).toFixed(2) + 'T';
+  if (n >= 1e9) return symbol + (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return symbol + (n / 1e6).toFixed(1) + 'M';
+  return symbol + n.toFixed(0);
+}
+
+/**
+ * Strip inline citation markers the model sometimes embeds in text,
+ * e.g. "(c4)" or "(c4, c5)" so they don't double up alongside
+ * the styled citation pills rendered by <InlineCites>.
+ * Only removes parenthesised citation-id patterns, not other parens.
+ */
+export function stripInlineCites(text: string): string {
+  // Match "(c\d+)" or "(c\d+, c\d+, …)" with optional whitespace
+  return text.replace(/\s*\(\s*c\d+(?:\s*,\s*c\d+)*\s*\)/g, '').trim();
 }
 
 /** Export a MarketBrief as a Markdown string */
@@ -48,6 +81,10 @@ export function mdExport(brief: MarketBrief): string {
     disclaimer,
   } = brief;
 
+  const sym = currencySymbol(snapshot.currency);
+  const fmtPrice = (p: number | null | undefined) =>
+    p != null ? sym + p.toFixed(2) : 'N/A';
+
   const inlineCites = (ids: string[]): string =>
     ids.length ? ' ' + ids.map((id) => `[${id}]`).join(' ') : '';
 
@@ -56,13 +93,17 @@ export function mdExport(brief: MarketBrief): string {
     items: { text: string; citations: string[] }[],
   ): string =>
     `## ${title}\n\n` +
-    items.map((b) => `- ${b.text}${inlineCites(b.citations)}`).join('\n') +
+    items
+      .map(
+        (b) => `- ${stripInlineCites(b.text)}${inlineCites(b.citations)}`,
+      )
+      .join('\n') +
     '\n\n';
 
   const anomalySection = anomalies
     .map(
       (a) =>
-        `### ${a.date} — ${a.magnitude}\n\n${a.explanation}${inlineCites(a.citations)}\n\n_Confidence: ${a.confidence}_\n`,
+        `### ${a.date} — ${a.magnitude}\n\n${stripInlineCites(a.explanation)}${inlineCites(a.citations)}\n\n_Confidence: ${a.confidence}_\n`,
     )
     .join('\n');
 
@@ -72,18 +113,18 @@ export function mdExport(brief: MarketBrief): string {
 
   return [
     `# ${ticker} — ${name}`,
-    `\n_As of ${as_of} · Period: ${period} · Price: $${snapshot.price.toFixed(2)}_\n`,
+    `\n_As of ${as_of} · Period: ${period} · Price: ${fmtPrice(snapshot.price)}_\n`,
     `## Snapshot\n`,
     `| Metric | Value |`,
     `|--------|-------|`,
-    `| Price | $${snapshot.price.toFixed(2)} |`,
+    `| Price | ${fmtPrice(snapshot.price)} |`,
     `| 1D | ${pct(snapshot.change_1d)} |`,
     `| 1M | ${pct(snapshot.change_1m)} |`,
     `| Period | ${pct(snapshot.change_period)} |`,
-    `| Market Cap | ${snapshot.market_cap} |`,
-    `| P/E | ${snapshot.pe !== null ? snapshot.pe.toFixed(1) : 'N/A'} |`,
-    `| 52w Low | $${snapshot.low_52w.toFixed(2)} |`,
-    `| 52w High | $${snapshot.high_52w.toFixed(2)} |`,
+    `| Market Cap | ${fmtCap(snapshot.market_cap, sym)} |`,
+    `| P/E | ${snapshot.pe !== null ? snapshot.pe?.toFixed(1) : 'N/A'} |`,
+    `| 52w Low | ${fmtPrice(snapshot.low_52w)} |`,
+    `| 52w High | ${fmtPrice(snapshot.high_52w)} |`,
     `\n## Indicators\n`,
     `RSI-14: ${indicators.rsi14} (${indicators.rsi_signal}) · Vol: ${indicators.annualized_vol_pct}% · Max DD: ${pct(indicators.max_drawdown_pct)} · Vol trend: ${indicators.volume_trend}`,
     `\n## Technical Read\n\n${technical_summary}\n`,
@@ -92,12 +133,16 @@ export function mdExport(brief: MarketBrief): string {
     `## Bull & Bear\n`,
     `### Bull case\n\n` +
       bull_case
-        .map((b) => `- ${b.text}${inlineCites(b.citations)}`)
+        .map(
+          (b) => `- ${stripInlineCites(b.text)}${inlineCites(b.citations)}`,
+        )
         .join('\n') +
       '\n',
     `\n### Bear case\n\n` +
       bear_case
-        .map((b) => `- ${b.text}${inlineCites(b.citations)}`)
+        .map(
+          (b) => `- ${stripInlineCites(b.text)}${inlineCites(b.citations)}`,
+        )
         .join('\n') +
       '\n\n',
     bulletSection('Key Risks', risks),

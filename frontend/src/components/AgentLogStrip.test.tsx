@@ -123,4 +123,37 @@ describe('AgentLogStrip', () => {
       screen.getByRole('region', { name: 'Agent log' }),
     ).toBeInTheDocument();
   });
+
+  // Bug #3: budget bar has aria-label
+  it('collapsed budget bar has aria-label describing tool budget', () => {
+    render(
+      <AgentLogStrip log={LOG} usage={USAGE} status="success" model="gemini" />,
+    );
+    // The collapsed budgetbar progressbar should have a descriptive aria-label
+    const bar = screen.getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-label', 'Tool budget: 2 / 15');
+    expect(bar).toHaveAttribute('title', 'Tool budget: 2 / 15');
+  });
+
+  it('expanded budget bar has aria-label describing tool budget', () => {
+    render(
+      <AgentLogStrip log={LOG} usage={USAGE} status="success" model="gemini" />,
+    );
+    // Expand first
+    fireEvent.click(screen.getByRole('button', { name: /expand agent log/i }));
+    const bar = screen.getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-label', 'Tool budget: 2 / 15');
+  });
+
+  // Bug #2: portal pop is NOT rendered inline when step is not hovered
+  it('pop card for tool step is not in DOM before hover', () => {
+    render(
+      <AgentLogStrip log={LOG} usage={null} status="streaming" model="gemini" />,
+    );
+    // The portal pop should not be rendered until mouse enters the step.
+    // The pn class (card header name) should not be in document before hover.
+    // Note: .nm span shows step.name; .pn inside the portal card also shows step.name
+    // but only after hover. We check that the pop tooltip role is absent.
+    expect(screen.queryByRole('tooltip')).toBeNull();
+  });
 });

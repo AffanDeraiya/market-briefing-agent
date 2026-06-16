@@ -1,6 +1,7 @@
 // Agent-log strip — sticky dark navy bar showing tool steps with hover cards.
 
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { LogStep, UsagePayload } from '../lib/types';
 import { TOOL_DESCRIPTIONS } from '../lib/demoFixture';
 
@@ -44,6 +45,68 @@ interface Props {
   model: string;
 }
 
+/** Bug #2: Portal-based pop card positioned via getBoundingClientRect. */
+interface PortalPopProps {
+  anchorRef: React.RefObject<HTMLDivElement | null>;
+  visible: boolean;
+  children: React.ReactNode;
+  /** If true, align right edge of card to right edge of anchor (for right-aligned cards). */
+  alignRight?: boolean;
+}
+
+function PortalPop({ anchorRef, visible, children, alignRight }: PortalPopProps) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  useEffect(() => {
+    if (visible && anchorRef.current) {
+      setRect(anchorRef.current.getBoundingClientRect());
+    }
+  }, [visible, anchorRef]);
+
+  if (!visible || !rect) return null;
+
+  const CARD_WIDTH = 280;
+  const GAP = 9;
+  const MARGIN = 8; // viewport edge margin
+
+  // Position below the anchor
+  const top = rect.bottom + GAP;
+  // Prefer left-aligned; clamp so it doesn't overflow the right viewport edge
+  let left = alignRight
+    ? rect.right - CARD_WIDTH
+    : rect.left;
+  // Clamp to viewport
+  const maxLeft = window.innerWidth - CARD_WIDTH - MARGIN;
+  if (left > maxLeft) left = maxLeft;
+  if (left < MARGIN) left = MARGIN;
+
+  const style: React.CSSProperties = {
+    position: 'fixed',
+    top,
+    left,
+    width: CARD_WIDTH,
+    zIndex: 9999,
+  };
+
+  return createPortal(
+    <div style={style} className="pop pop-portal" role="tooltip">
+      {children}
+    </div>,
+    document.body,
+  );
+}
+
+/** Per-step hover state hook — returns hovered/focused flag + handlers. */
+function useHover() {
+  const [active, setActive] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const onMouseEnter = useCallback(() => setActive(true), []);
+  const onMouseLeave = useCallback(() => setActive(false), []);
+  const onFocus = useCallback(() => setActive(true), []);
+  const onBlur = useCallback(() => setActive(false), []);
+  return { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur };
+}
+
 function ToolStepCard({ step }: { step: LogStep }) {
   const staticDesc = TOOL_DESCRIPTIONS[step.name ?? ''] ?? '';
   const dynamicDesc = describeToolCall(step);
@@ -54,7 +117,7 @@ function ToolStepCard({ step }: { step: LogStep }) {
     : '—';
 
   return (
-    <div className="pop">
+    <>
       <div className="ph">
         <span className="pn">{step.name}</span>
         <span className={`pstat ${step.ok !== false ? 'ok' : 'ng'}`}>
@@ -79,40 +142,54 @@ function ToolStepCard({ step }: { step: LogStep }) {
           {step.ms !== undefined ? `${step.ms} ms` : '…'}
         </span>
       </div>
-    </div>
+    </>
   );
 }
 
 function AnomalyStepCard({ step }: { step: LogStep }) {
+  // Bug #14: render the real anomaly kind + magnitude from the step payload.
+  // The σ value (when applicable) is embedded inside `magnitude`, e.g.
+  // "+20.3% (4.1σ)" or "volume 5.2× 30d avg" — there is no separate sigma field.
+  const kindLabel = step.kind ? step.kind.replace('_', ' ') : 'anomaly';
+  const targetLabel = step.magnitude
+    ? `${kindLabel} · ${step.magnitude}`
+    : kindLabel;
+
   return (
-    <div className="pop">
+    <>
       <div className="ph">
         <span className="pn">anomaly focus</span>
         <span className="pstat an">investigate</span>
       </div>
       <div className="pdesc">
-        The agent paused the scan to investigate the most unusual day before
+        The agent paused the scan to investigate this unusual day before
         writing anything.
       </div>
       <div className="prow">
         <span className="pk">target</span>
-        <span className="pv an">price drop · 2.5σ</span>
+        <span className="pv an">{targetLabel}</span>
       </div>
+      {step.severity && (
+        <div className="prow">
+          <span className="pk">severity</span>
+          <span className="pv an">{step.severity}</span>
+        </div>
+      )}
       <div className="prow">
         <span className="pk">date</span>
-        <span className="pv">{step.date}</span>
+        <span className="pv">{step.date ?? '—'}</span>
       </div>
       <div className="prow">
         <span className="pk">next</span>
         <span className="pv">±3-day news search</span>
       </div>
-    </div>
+    </>
   );
 }
 
 function ComposeStepCard({ step }: { step: LogStep }) {
   return (
-    <div className="pop right">
+    <>
       <div className="ph">
         <span className="pn">compose brief</span>
         <span className="pstat ok">done</span>
@@ -126,7 +203,7 @@ function ComposeStepCard({ step }: { step: LogStep }) {
         <span className="pk">output</span>
         <span className="pv">finalized cited brief</span>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -144,7 +221,7 @@ function RunSummaryCard({
   const latencyS = (usage.latency_ms / 1000).toFixed(0);
 
   return (
-    <div className="pop right">
+    <>
       <div className="ph">
         <span className="pn">run summary</span>
         <span className="pstat ok">done</span>
@@ -181,7 +258,7 @@ function RunSummaryCard({
         <span className="pk">latency</span>
         <span className="pv">{latencyS} s</span>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -198,6 +275,137 @@ function deduplicateLog(log: LogStep[]): LogStep[] {
   return merged;
 }
 
+/** Individual step wrapper that handles hover + portal pop. */
+function ToolStep({ step }: { step: LogStep }) {
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } = useHover();
+  const isDone = step.ms !== undefined;
+  return (
+    <div
+      ref={ref}
+      className={`st tl-item${isDone ? '' : ' active'}`}
+      tabIndex={0}
+      aria-label={`Tool: ${step.name}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
+    >
+      <span className="tick">{step.ok === false ? '✗' : '✓'}</span>
+      <span className="nm">{step.name}</span>
+      {isDone && <span className="ms">{step.ms}ms</span>}
+      <PortalPop anchorRef={ref} visible={active}>
+        <ToolStepCard step={step} />
+      </PortalPop>
+    </div>
+  );
+}
+
+function AnomalyStep({ step }: { step: LogStep }) {
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } = useHover();
+  return (
+    <div
+      ref={ref}
+      className="st anom tl-item"
+      tabIndex={0}
+      aria-label="Investigating anomaly"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
+    >
+      <span className="dia">◆</span>
+      <span className="nm" style={{ color: '#e6b260' }}>
+        anomaly
+      </span>
+      <PortalPop anchorRef={ref} visible={active}>
+        <AnomalyStepCard step={step} />
+      </PortalPop>
+    </div>
+  );
+}
+
+function ComposeStep({ step }: { step: LogStep }) {
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } = useHover();
+  return (
+    <div
+      ref={ref}
+      className="st compose tl-item"
+      tabIndex={0}
+      aria-label="Compose brief"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
+    >
+      <span className="pen">✎</span>
+      <span className="nm" style={{ color: '#c8d4de' }}>
+        compose
+      </span>
+      <PortalPop anchorRef={ref} visible={active} alignRight>
+        <ComposeStepCard step={step} />
+      </PortalPop>
+    </div>
+  );
+}
+
+function RunStatsCell({
+  toolCallCount,
+  totalTokens,
+  latencyS,
+  usage,
+  model,
+  isSuccess,
+  onCollapse,
+}: {
+  toolCallCount: number;
+  totalTokens: string;
+  latencyS: string;
+  usage: UsagePayload | null;
+  model: string;
+  isSuccess: boolean;
+  onCollapse: () => void;
+}) {
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } = useHover();
+  return (
+    <div
+      ref={ref}
+      className="runstats"
+      tabIndex={0}
+      aria-label="Run statistics"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
+    >
+      <span className="sv mono">
+        {toolCallCount}/{MAX_TOOL_CALLS}
+      </span>{' '}
+      tools <span className="sv mono">{totalTokens}</span> tok{' '}
+      <span className="sv mono">{latencyS}</span>
+      {isSuccess && (
+        <button
+          onClick={onCollapse}
+          style={{
+            marginLeft: 8,
+            fontSize: 10,
+            color: '#7a8fa0',
+            fontFamily: 'JetBrains Mono',
+            cursor: 'pointer',
+          }}
+          aria-label="Collapse agent log"
+        >
+          collapse
+        </button>
+      )}
+      {usage && (
+        <PortalPop anchorRef={ref} visible={active} alignRight>
+          <RunSummaryCard usage={usage} model={model} />
+        </PortalPop>
+      )}
+    </div>
+  );
+}
+
 export function AgentLogStrip({ log, usage, status, model }: Props) {
   // When status is 'success', collapse to a one-line summary bar by default.
   // User can click to re-expand.
@@ -207,6 +415,7 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
   const displayLog = deduplicateLog(log);
   const toolCallCount = log.filter((s) => s.type === 'tool_call').length;
   const budgetPct = Math.round((toolCallCount / MAX_TOOL_CALLS) * 100);
+  const budgetLabel = `Tool budget: ${toolCallCount} / ${MAX_TOOL_CALLS}`;
 
   const totalTokens = usage
     ? ((usage.input_tokens + usage.output_tokens) / 1000).toFixed(1) + 'k'
@@ -221,6 +430,18 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
       ? '$0.00'
       : '$' + usage.est_cost_usd.toFixed(4)
     : null;
+
+  // Bug #1: wheel handler to translate vertical wheel into horizontal scroll
+  const stepsRef = useRef<HTMLDivElement>(null);
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const el = stepsRef.current;
+    if (!el) return;
+    const hasOverflow = el.scrollWidth > el.clientWidth;
+    if (hasOverflow && e.deltaY !== 0) {
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    }
+  }, []);
 
   // Collapsed one-line summary bar shown when success and not expanded
   if (isSuccess && !expanded) {
@@ -249,12 +470,15 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
             <span className="expand-hint">expand</span>
           </button>
         </div>
+        {/* Bug #3: aria-label on collapsed budgetbar */}
         <div
           className="budgetbar"
           role="progressbar"
           aria-valuenow={100}
           aria-valuemin={0}
           aria-valuemax={100}
+          title={budgetLabel}
+          aria-label={budgetLabel}
         >
           <i style={{ width: `${budgetPct}%` }} />
         </div>
@@ -274,89 +498,44 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
           <span className="lp" aria-hidden="true" />
           agent log
         </span>
-        <div className="steps">
+        {/* Bug #1: onWheel on the steps scroller; Bug #2: fade mask added via CSS */}
+        <div
+          ref={stepsRef}
+          className="steps"
+          onWheel={handleWheel}
+        >
           {displayLog.map((step) => {
             if (step.type === 'tool_call') {
-              const isDone = step.ms !== undefined;
-              return (
-                <div
-                  key={step.id}
-                  className={`st tl-item${isDone ? '' : ' active'}`}
-                  tabIndex={0}
-                  aria-label={`Tool: ${step.name}`}
-                >
-                  <span className="tick">{step.ok === false ? '✗' : '✓'}</span>
-                  <span className="nm">{step.name}</span>
-                  {isDone && <span className="ms">{step.ms}ms</span>}
-                  <ToolStepCard step={step} />
-                </div>
-              );
+              return <ToolStep key={step.id} step={step} />;
             }
             if (step.type === 'anomaly_focus') {
-              return (
-                <div
-                  key={step.id}
-                  className="st anom tl-item"
-                  tabIndex={0}
-                  aria-label="Investigating anomaly"
-                >
-                  <span className="dia">◆</span>
-                  <span className="nm" style={{ color: '#e6b260' }}>
-                    anomaly
-                  </span>
-                  <AnomalyStepCard step={step} />
-                </div>
-              );
+              return <AnomalyStep key={step.id} step={step} />;
             }
             if (step.type === 'step') {
-              return (
-                <div
-                  key={step.id}
-                  className="st compose tl-item"
-                  tabIndex={0}
-                  aria-label="Compose brief"
-                >
-                  <span className="pen">✎</span>
-                  <span className="nm" style={{ color: '#c8d4de' }}>
-                    compose
-                  </span>
-                  <ComposeStepCard step={step} />
-                </div>
-              );
+              return <ComposeStep key={step.id} step={step} />;
             }
             return null;
           })}
         </div>
-        <div className="runstats" tabIndex={0} aria-label="Run statistics">
-          <span className="sv mono">
-            {toolCallCount}/{MAX_TOOL_CALLS}
-          </span>{' '}
-          tools <span className="sv mono">{totalTokens}</span> tok{' '}
-          <span className="sv mono">{latencyS}</span>
-          {isSuccess && (
-            <button
-              onClick={() => setExpanded(false)}
-              style={{
-                marginLeft: 8,
-                fontSize: 10,
-                color: '#7a8fa0',
-                fontFamily: 'JetBrains Mono',
-                cursor: 'pointer',
-              }}
-              aria-label="Collapse agent log"
-            >
-              collapse
-            </button>
-          )}
-          {usage && <RunSummaryCard usage={usage} model={model} />}
-        </div>
+        <RunStatsCell
+          toolCallCount={toolCallCount}
+          totalTokens={totalTokens}
+          latencyS={latencyS}
+          usage={usage}
+          model={model}
+          isSuccess={isSuccess}
+          onCollapse={() => setExpanded(false)}
+        />
       </div>
+      {/* Bug #3: aria-label on expanded budgetbar */}
       <div
         className="budgetbar"
         role="progressbar"
         aria-valuenow={budgetPct}
         aria-valuemin={0}
         aria-valuemax={100}
+        title={budgetLabel}
+        aria-label={budgetLabel}
       >
         <i style={{ width: `${budgetPct}%` }} />
       </div>

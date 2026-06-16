@@ -1,6 +1,6 @@
 # Eval Report
 
-Generated on: 2026-06-15
+Generated on: 2026-06-16
 
 | run | ticker | period | iters | tools | faithfulness | structure | status |
 | --- | ------ | ------ | ----- | ----- | ------------ | --------- | ------ |

@@ -1,7 +1,7 @@
 // Price chart — Recharts ComposedChart replacing hand-rolled SVG.
 // Preserves identical visual: price line + faint volume bars + amber anomaly pin + crosshair tooltip.
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -12,7 +12,6 @@ import {
   CartesianGrid,
   Tooltip,
   ReferenceDot,
-  type TooltipProps,
 } from 'recharts';
 import type { ChartDataPayload } from '../lib/types';
 import { useRunStore } from '../store/runStore';
@@ -21,6 +20,8 @@ interface Props {
   chartData: ChartDataPayload;
   period: string;
   ticker: string;
+  /** Pre-computed currency symbol, forwarded from Board */
+  currencySymbol?: string;
 }
 
 interface ChartPoint {
@@ -40,25 +41,21 @@ function toChartPoints(ohlcv: ChartDataPayload['ohlcv']): ChartPoint[] {
 }
 
 // ---- Custom crosshair tooltip ----
-interface CrossTipPayloadEntry {
-  dataKey?: string | number;
-  value?: number;
-  payload?: ChartPoint;
-}
-
-interface CrossTipProps extends TooltipProps<number, string> {
+// We avoid extending TooltipProps directly to sidestep the `payload` readonly mismatch.
+interface CrossTipProps {
   active?: boolean;
-  label?: string;
-  payload?: CrossTipPayloadEntry[];
+  label?: string | number;
+  payload?: ReadonlyArray<{ payload?: ChartPoint }>;
+  currencySymbol?: string;
 }
 
-function CrossTip({ active, payload }: CrossTipProps) {
+function CrossTip({ active, payload, currencySymbol: sym = '$' }: CrossTipProps) {
   if (!active || !payload || payload.length === 0) return null;
   const pt = payload[0]?.payload;
   if (!pt) return null;
 
   const vol = pt.volume != null ? `${(pt.volume / 1e6).toFixed(0)}M` : '—';
-  const close = pt.close != null ? `$${pt.close.toFixed(2)}` : '—';
+  const close = pt.close != null ? `${sym}${pt.close.toFixed(2)}` : '—';
 
   return (
     <div
@@ -79,6 +76,9 @@ interface AnomalyPinProps {
   isLinked: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  /** Vertical offset for the callout pill, to stagger clustered pins */
+  stackOffset?: number;
+  severity?: 'high' | 'medium';
 }
 
 function AnomalyPin({
@@ -88,12 +88,16 @@ function AnomalyPin({
   isLinked,
   onMouseEnter,
   onMouseLeave,
+  stackOffset = 0,
+  severity = 'high',
 }: AnomalyPinProps) {
-  const calloutW = 132;
+  const calloutW = 148;
   const calloutH = 22;
-  const pinHeight = 36;
+  const pinHeight = 36 + stackOffset;
   const rx = Math.max(cx - calloutW / 2, 2);
   const ry = cy - pinHeight - calloutH;
+  // medium anomalies use a slightly dimmed amber
+  const color = severity === 'high' ? 'var(--anom)' : 'rgba(138,90,0,0.65)';
 
   return (
     <g
@@ -107,7 +111,7 @@ function AnomalyPin({
         y1={cy - 8}
         x2={cx}
         y2={cy - pinHeight}
-        stroke="var(--anom)"
+        stroke={color}
         strokeWidth={1}
         strokeDasharray="2 2"
       />
@@ -118,7 +122,7 @@ function AnomalyPin({
         width={calloutW}
         height={calloutH}
         rx={5}
-        fill="var(--anom)"
+        fill={color}
       />
       <text
         x={cx}
@@ -137,7 +141,7 @@ function AnomalyPin({
         cx={cx}
         cy={cy}
         r={6}
-        fill="var(--anom)"
+        fill={color}
         stroke="var(--panel)"
         strokeWidth={2.5}
       />
@@ -145,36 +149,72 @@ function AnomalyPin({
   );
 }
 
-export function PriceChart({ chartData, period, ticker }: Props) {
+/** Resolve the chart point for a given anomaly date */
+function resolveAnomalyPoint(
+  pts: ChartPoint[],
+  anomalyDate: string,
+): ChartPoint | undefined {
+  const exact = pts.find((p) => p.date === anomalyDate);
+  if (exact) return exact;
+  // fall back to the latest week that started on or before the anomaly date
+  const containing = pts.filter((p) => p.date <= anomalyDate).at(-1);
+  if (containing) return containing;
+  // last resort: final point
+  return pts.at(-1);
+}
+
+export function PriceChart({
+  chartData,
+  period,
+  ticker,
+  currencySymbol: sym = '$',
+}: Props) {
   const setHoveredAnomaly = useRunStore((s) => s.setHoveredAnomaly);
   const hoveredAnomaly = useRunStore((s) => s.hoveredAnomaly);
 
-  const pts = toChartPoints(chartData.ohlcv);
-  const n = pts.length;
+  const pts = useMemo(() => toChartPoints(chartData.ohlcv), [chartData.ohlcv]);
 
-  // Anomaly — resolved before any early return so hook order is stable.
-  // Weekly points are keyed by week_start; a daily anomaly date rarely matches one
-  // exactly, so fall back to the week that *contains* the anomaly (latest week_start
-  // on or before the anomaly date), then to the last point.
-  const anomaly = chartData.anomalies[0];
-  const anomalyDate = anomaly?.date;
-  const containingWeek =
-    anomalyDate !== undefined
-      ? pts.filter((p) => p.date <= anomalyDate).at(-1)
-      : undefined;
-  const anomalyPoint =
-    pts.find((p) => p.date === anomalyDate) ??
-    containingWeek ??
-    (anomaly && n > 0 ? pts[n - 1] : undefined);
+  // Resolve a chart point for every anomaly — stable across renders
+  const resolvedAnomalies = useMemo(
+    () =>
+      chartData.anomalies.map((a) => ({
+        anomaly: a,
+        point: resolveAnomalyPoint(pts, a.date),
+      })),
+    [chartData.anomalies, pts],
+  );
 
-  const handleAnomalyEnter = useCallback(() => {
-    if (anomalyDate) setHoveredAnomaly(anomalyDate);
-  }, [anomalyDate, setHoveredAnomaly]);
+  // Per-anomaly mouse enter callbacks — memoised by date string
+  const enterHandlers = useMemo<Record<string, () => void>>(
+    () =>
+      Object.fromEntries(
+        chartData.anomalies.map((a) => [
+          a.date,
+          () => setHoveredAnomaly(a.date),
+        ]),
+      ),
+    [chartData.anomalies, setHoveredAnomaly],
+  );
 
-  const handleAnomalyLeave = useCallback(() => {
+  const handleLeave = useCallback(() => {
     setHoveredAnomaly(null);
   }, [setHoveredAnomaly]);
 
+  // Build stagger offsets for clustered pins — grouped by resolved point date
+  const stackOffsets = useMemo(() => {
+    const offsets = new Map<string, number>();
+    const dateSeen: Record<string, number> = {};
+    for (const { anomaly, point } of resolvedAnomalies) {
+      if (!point) continue;
+      const key = point.date;
+      const idx = dateSeen[key] ?? 0;
+      dateSeen[key] = idx + 1;
+      offsets.set(anomaly.date, idx * 36);
+    }
+    return offsets;
+  }, [resolvedAnomalies]);
+
+  const n = pts.length;
   if (n === 0) return null;
 
   const closes = pts.map((p) => p.close);
@@ -193,11 +233,7 @@ export function PriceChart({ chartData, period, ticker }: Props) {
     .filter((_, i) => i % 3 === 0 || i === n - 1)
     .map((p) => p.date);
 
-  const isAnomalyLinked = hoveredAnomaly === anomalyDate;
-
-  const pinLabel = anomaly
-    ? `${anomaly.magnitude} · ${anomaly.sigma ?? ''} · ${anomalyDate?.slice(5) ?? ''}`
-    : '';
+  const hasAnomalies = resolvedAnomalies.length > 0;
 
   return (
     <div
@@ -209,7 +245,13 @@ export function PriceChart({ chartData, period, ticker }: Props) {
         <span className="ch-title mono">
           {ticker} · weekly close · {period}
         </span>
-        {anomaly && <span className="ch-meta mono">anomaly pinned ↓</span>}
+        {hasAnomalies && (
+          <span className="ch-meta mono">
+            {resolvedAnomalies.length === 1
+              ? 'anomaly pinned ↓'
+              : `${resolvedAnomalies.length} anomalies pinned ↓`}
+          </span>
+        )}
       </div>
       <div className="chart-wrap">
         <ResponsiveContainer width="100%" height={240}>
@@ -263,7 +305,7 @@ export function PriceChart({ chartData, period, ticker }: Props) {
             />
 
             <Tooltip
-              content={<CrossTip />}
+              content={<CrossTip currencySymbol={sym} />}
               cursor={{
                 stroke: 'var(--accent)',
                 strokeWidth: 1,
@@ -294,29 +336,47 @@ export function PriceChart({ chartData, period, ticker }: Props) {
               strokeLinejoin="round"
             />
 
-            {/* Anomaly overlay — custom shape */}
-            {anomaly && anomalyPoint && (
-              <ReferenceDot
-                yAxisId="price"
-                x={anomalyPoint.date}
-                y={anomalyPoint.close}
-                r={0}
-                shape={(dotProps) => {
-                  const cx = typeof dotProps.cx === 'number' ? dotProps.cx : 0;
-                  const cy = typeof dotProps.cy === 'number' ? dotProps.cy : 0;
-                  return (
-                    <AnomalyPin
-                      cx={cx}
-                      cy={cy}
-                      label={pinLabel}
-                      isLinked={isAnomalyLinked}
-                      onMouseEnter={handleAnomalyEnter}
-                      onMouseLeave={handleAnomalyLeave}
-                    />
-                  );
-                }}
-              />
-            )}
+            {/* Anomaly overlays — one pin per anomaly */}
+            {resolvedAnomalies.map(({ anomaly, point }) => {
+              if (!point) return null;
+              const isLinked = hoveredAnomaly === anomaly.date;
+              const offset = stackOffsets.get(anomaly.date) ?? 0;
+              // Label: magnitude · date
+              const pinLabel = `${anomaly.magnitude} · ${anomaly.date.slice(5)}`;
+
+              return (
+                <ReferenceDot
+                  key={anomaly.date}
+                  yAxisId="price"
+                  x={point.date}
+                  y={point.close}
+                  r={0}
+                  shape={(dotProps: {
+                    cx?: number | string;
+                    cy?: number | string;
+                  }) => {
+                    const cx =
+                      typeof dotProps.cx === 'number' ? dotProps.cx : 0;
+                    const cy =
+                      typeof dotProps.cy === 'number' ? dotProps.cy : 0;
+                    return (
+                      <AnomalyPin
+                        cx={cx}
+                        cy={cy}
+                        label={pinLabel}
+                        isLinked={isLinked}
+                        onMouseEnter={
+                          enterHandlers[anomaly.date] ?? (() => undefined)
+                        }
+                        onMouseLeave={handleLeave}
+                        stackOffset={offset}
+                        severity={anomaly.severity}
+                      />
+                    );
+                  }}
+                />
+              );
+            })}
           </ComposedChart>
         </ResponsiveContainer>
       </div>

@@ -11,11 +11,11 @@ import { pct, changeClass } from '../lib/format';
 const CHIPS: string[] = ['AAPL', 'TSLA', 'RELIANCE.NS', 'MSFT'];
 const PERIODS: Period[] = ['1mo', '3mo', '6mo', '1y'];
 
-function timeAgo(dateStr: string): string {
-  const now = new Date();
-  const then = new Date(dateStr);
-  const diffMs = now.getTime() - then.getTime();
-  const diffH = Math.floor(diffMs / 3600000);
+/** Bug #13: compute relative label from epoch-ms savedAt, falling back to as_of date string. */
+function timeAgo(r: RecentBrief): string {
+  // Prefer savedAt (epoch ms) — no timezone ambiguity.
+  const diffMs = Date.now() - (r.savedAt ?? new Date(r.as_of).getTime());
+  const diffH = Math.floor(diffMs / 3_600_000);
   if (diffH < 1) return 'just now';
   if (diffH < 24) return `${diffH}h ago`;
   const diffD = Math.floor(diffH / 24);
@@ -40,7 +40,7 @@ function RecentCard({ r, onClick }: RecentCardProps) {
         {pct(r.change_1d)} · {r.period}
       </div>
       <div className="rd">
-        {r.name} · {timeAgo(r.as_of)}
+        {r.name} · {timeAgo(r)}
       </div>
     </button>
   );
@@ -140,8 +140,12 @@ export function Home({ onGenerate }: Props) {
     doValidate(chip);
   };
 
+  /** Bug #5: only generate when validation has returned valid:true for the current ticker. */
+  const canGenerate = validation.valid === true && !validation.loading;
+
   const handleGenerate = () => {
-    const t = ticker.trim().toUpperCase() || 'AAPL';
+    if (!canGenerate) return;
+    const t = ticker.trim().toUpperCase();
     onGenerate(t, period);
   };
 
@@ -215,7 +219,7 @@ export function Home({ onGenerate }: Props) {
                   return;
                 }
               }
-              if (e.key === 'Enter') handleGenerate();
+              if (e.key === 'Enter' && canGenerate) handleGenerate();
             }}
           />
           {validation.loading && (
@@ -292,7 +296,21 @@ export function Home({ onGenerate }: Props) {
               </button>
             ))}
           </div>
-          <button className="gen" onClick={handleGenerate}>
+          <button
+            className="gen"
+            onClick={handleGenerate}
+            disabled={!canGenerate}
+            aria-disabled={!canGenerate}
+            title={
+              !ticker.trim()
+                ? 'Enter a ticker first'
+                : validation.loading
+                  ? 'Validating ticker…'
+                  : validation.valid !== true
+                    ? 'Enter a valid ticker to generate a brief'
+                    : undefined
+            }
+          >
             Generate brief →
           </button>
         </div>

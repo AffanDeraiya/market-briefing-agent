@@ -79,6 +79,9 @@ class RunState(BaseModel):
     # latest structured outputs captured for deterministic brief enrichment
     price_history_out: dict[str, Any] | None = None
     indicators_out: dict[str, Any] | None = None
+    fundamentals_out: dict[str, Any] = Field(default_factory=dict)
+    # full anomaly dicts from detect_anomalies (date, kind, magnitude, severity)
+    anomalies_detail: list[dict[str, Any]] = Field(default_factory=list)
 
     def elapsed_s(self) -> float:
         """Seconds elapsed since this RunState was created."""

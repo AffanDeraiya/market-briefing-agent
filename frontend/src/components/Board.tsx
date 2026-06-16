@@ -3,6 +3,7 @@
 
 import { useEffect, useRef } from 'react';
 import type { MarketBrief, ChartDataPayload } from '../lib/types';
+import { currencySymbol } from '../lib/format';
 import { SkeletonVeil } from './Skeleton';
 import { PriceChart } from './PriceChart';
 import { SnapshotBar } from './SnapshotBar';
@@ -22,16 +23,10 @@ interface Props {
   isStreaming: boolean;
 }
 
-// Chart sigma lookup from chart anomalies
-function buildSigmaMap(
-  chartData: ChartDataPayload | null,
-): Record<string, string> {
-  if (!chartData) return {};
-  const map: Record<string, string> = {};
-  for (const a of chartData.anomalies) {
-    if (a.sigma) map[a.date] = a.sigma;
-  }
-  return map;
+// chartSigmas map is no longer needed (sigma is embedded in the magnitude string).
+// Kept as a no-op stub so AnomalySection's chartSigmas prop still compiles.
+function buildSigmaMap(): Record<string, string> {
+  return {};
 }
 
 interface SectionWrapperProps {
@@ -91,14 +86,15 @@ export function Board({
   period,
   isStreaming,
 }: Props) {
-  const sigmas = buildSigmaMap(chartData);
+  const sigmas = buildSigmaMap();
+  const sym = brief ? currencySymbol(brief.snapshot.currency) : '$';
 
   return (
     <div className="board">
       {/* Chart */}
       <SectionWrapper ready={!!chartData} isStreaming={isStreaming} minHeight={260}>
         {chartData ? (
-          <PriceChart chartData={chartData} period={period} ticker={ticker} />
+          <PriceChart chartData={chartData} period={period} ticker={ticker} currencySymbol={sym} />
         ) : (
           <div className="chartbox" style={{ minHeight: 260 }} />
         )}

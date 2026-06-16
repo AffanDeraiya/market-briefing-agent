@@ -7,9 +7,10 @@ const mockSnapshot: Snapshot = {
   change_1d: -1.52,
   change_1m: -2.59,
   change_period: 16.5,
-  market_cap: '$4.28T',
+  market_cap: 4_280_000_000_000,
   pe: 35.2,
   sector: 'Technology',
+  currency: 'USD',
   low_52w: 194.87,
   high_52w: 315.2,
 };
@@ -25,9 +26,15 @@ describe('SnapshotBar', () => {
     expect(screen.getByText('P/E')).toBeInTheDocument();
   });
 
-  it('renders the price correctly', () => {
+  it('renders the price correctly with currency symbol', () => {
     render(<SnapshotBar snapshot={mockSnapshot} period="3mo" />);
     expect(screen.getByText('$291.13')).toBeInTheDocument();
+  });
+
+  it('renders price with INR symbol for Indian tickers', () => {
+    const snap = { ...mockSnapshot, currency: 'INR', price: 876.75 };
+    render(<SnapshotBar snapshot={snap} period="3mo" />);
+    expect(screen.getByText('₹876.75')).toBeInTheDocument();
   });
 
   it('renders negative 1D change with neg class', () => {
@@ -42,9 +49,16 @@ describe('SnapshotBar', () => {
     expect(cell).toHaveClass('pos');
   });
 
-  it('renders market cap', () => {
+  it('formats market cap as compact string', () => {
     render(<SnapshotBar snapshot={mockSnapshot} period="3mo" />);
     expect(screen.getByText('$4.28T')).toBeInTheDocument();
+  });
+
+  it('renders N/A for null market cap', () => {
+    const snap = { ...mockSnapshot, market_cap: null };
+    render(<SnapshotBar snapshot={snap} period="3mo" />);
+    // N/A for market cap
+    expect(screen.getAllByText('N/A').length).toBeGreaterThan(0);
   });
 
   it('renders P/E', () => {

@@ -52,11 +52,14 @@ Add one "tool" citation per distinct market-data source you lean on; reuse its i
 Your final message must be ONE JSON object and nothing else — no prose, no \
 markdown, no code fences. It must match this shape exactly:
 
+IMPORTANT: The backend fills all numeric snapshot fields (price, change_1d, \
+change_1m, change_period, market_cap, pe, low_52w, high_52w, currency) \
+deterministically from tool outputs. Do NOT author those numbers — emit only \
+"sector" in snapshot. The backend will overwrite/add the rest.
+
 {{
   "ticker": str, "name": str, "as_of": "YYYY-MM-DD", "period": str,
-  "snapshot": {{ "price": number, "change_1d": number, "change_1m": number,
-               "change_period": number, "market_cap": number|null,
-               "pe": number|null, "sector": str|null }},
+  "snapshot": {{ "sector": str|null }},
   "technical_summary": str,            // 2-3 sentences; reference "tool" citation ids
   "anomalies": [ {{ "date": "YYYY-MM-DD",
                     "kind": "price_spike"|"price_drop"|"volume_surge"|"gap",
