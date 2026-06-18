@@ -217,8 +217,8 @@ def run_agent(
         if _is_rate_limit:
             _log.warning("[rate_limit] provider returned 429: %s", str(exc)[:300])
             error = (
-                "upstream",
-                "LLM provider rate limit reached. Please wait a few minutes and try again.",
+                "budget",
+                "The demo has hit its LLM provider rate limit. Please try again in a few minutes.",
             )
         else:
             _log.exception("[unhandled] %s: %s", type(exc).__name__, exc)

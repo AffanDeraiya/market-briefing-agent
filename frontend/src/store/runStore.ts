@@ -12,6 +12,9 @@ import type {
 import { DEMO_EVENTS, DEMO_BRIEF, DEMO_CHART_DATA } from '../lib/demoFixture';
 import { streamBrief, BriefStreamError } from '../lib/sse';
 
+const BASE: string =
+  (import.meta.env.VITE_API_BASE as string | undefined) ?? '';
+
 export type RunStatus =
   | 'idle'
   | 'validating'
@@ -67,6 +70,8 @@ export interface RunState {
   error: string | null;
   /** Seconds until rate-limit resets (from Retry-After header), if present. */
   retryAfterS: number | null;
+  /** Configured per-IP hourly brief limit, fetched from /api/health. Null until fetched. */
+  briefsPerHour: number | null;
 
   // Live data
   log: LogStep[];
@@ -91,6 +96,7 @@ export interface RunState {
   stopRun: () => void;
   setHoveredAnomaly: (date: string | null) => void;
   loadRecent: (r: RecentBrief) => void;
+  fetchConfig: () => Promise<void>;
 }
 
 let demoTimeoutIds: ReturnType<typeof setTimeout>[] = [];
@@ -104,6 +110,7 @@ export const useRunStore = create<RunState>((set, get) => ({
   status: 'idle',
   error: null,
   retryAfterS: null,
+  briefsPerHour: null,
   log: [],
   chartData: null,
   brief: null,
@@ -344,13 +351,17 @@ export const useRunStore = create<RunState>((set, get) => ({
       ).catch((e: unknown) => {
         if (controller.signal.aborted) return;
 
-        // 429 rate-limit
+        // 429 rate-limit — budget kind → dedicated budget card; others → rate_limited card
         if (e instanceof BriefStreamError && e.status === 429) {
-          set({
-            status: 'rate_limited',
-            error: null,
-            retryAfterS: e.retryAfter ?? null,
-          });
+          if (e.kind === 'budget') {
+            set({ status: 'error', error: '__budget__', retryAfterS: null });
+          } else {
+            set({
+              status: 'rate_limited',
+              error: null,
+              retryAfterS: e.retryAfter ?? null,
+            });
+          }
           return;
         }
 
@@ -382,6 +393,29 @@ export const useRunStore = create<RunState>((set, get) => ({
       });
 
     void doStream(false);
+  },
+
+  fetchConfig: async () => {
+    try {
+      const resp = await fetch(`${BASE}/api/health`);
+      if (resp.ok) {
+        const data: unknown = await resp.json();
+        if (
+          data &&
+          typeof data === 'object' &&
+          'briefs_per_hour' in data &&
+          typeof (data as { briefs_per_hour?: unknown }).briefs_per_hour ===
+            'number'
+        ) {
+          set({
+            briefsPerHour: (data as { briefs_per_hour: number })
+              .briefs_per_hour,
+          });
+        }
+      }
+    } catch {
+      // network error or parse failure — leave briefsPerHour as null
+    }
   },
 
   loadRecent: (r: RecentBrief) => {

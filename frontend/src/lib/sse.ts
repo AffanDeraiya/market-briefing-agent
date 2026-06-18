@@ -17,12 +17,20 @@ export class BriefStreamError extends Error {
   readonly status?: number;
   /** Retry-After header value in seconds, if the server sent one (429 rate-limit). */
   readonly retryAfter?: number;
+  /** Error kind from the response body's detail.kind field, if present (e.g. "budget", "concurrency"). */
+  readonly kind?: string;
 
-  constructor(message: string, status?: number, retryAfter?: number) {
+  constructor(
+    message: string,
+    status?: number,
+    retryAfter?: number,
+    kind?: string,
+  ) {
     super(message);
     this.name = 'BriefStreamError';
     this.status = status;
     this.retryAfter = retryAfter;
+    this.kind = kind;
   }
 }
 
@@ -45,7 +53,25 @@ export async function streamBrief(
       const parsed = parseInt(ra, 10);
       if (!isNaN(parsed)) retryAfter = parsed;
     }
-    throw new BriefStreamError(`HTTP ${resp.status}`, resp.status, retryAfter);
+    let kind: string | undefined;
+    try {
+      const data: unknown = await resp.clone().json();
+      if (data && typeof data === 'object' && 'detail' in data) {
+        const detail = (data as { detail?: unknown }).detail;
+        if (detail && typeof detail === 'object' && 'kind' in detail) {
+          const k = (detail as { kind?: unknown }).kind;
+          if (typeof k === 'string') kind = k;
+        }
+      }
+    } catch {
+      // body not JSON (e.g. slowapi default) — leave kind undefined
+    }
+    throw new BriefStreamError(
+      `HTTP ${resp.status}`,
+      resp.status,
+      retryAfter,
+      kind,
+    );
   }
 
   const reader = resp.body?.getReader();

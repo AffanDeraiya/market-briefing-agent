@@ -12,3 +12,4 @@ def test_health_returns_ok() -> None:
     assert body["status"] == "ok"
     assert "model" in body
     assert isinstance(body["daily_briefs_remaining"], int)
+    assert isinstance(body["briefs_per_hour"], int)
