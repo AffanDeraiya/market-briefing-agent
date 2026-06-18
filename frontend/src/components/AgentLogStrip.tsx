@@ -500,11 +500,20 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
       : '$' + usage.est_cost_usd.toFixed(4)
     : null;
 
-  // Bug #1 / Bug A3: attach wheel listener imperatively (non-passive) so
-  // preventDefault actually works and vertical wheel stays in the strip.
-  const stepsRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = stepsRef.current;
+  // Bug #1 / Bug A3: attach the non-passive wheel listener (so preventDefault
+  // works and vertical wheel scrolls the strip horizontally) via a CALLBACK
+  // ref, not a mount-only useEffect. The .steps element is conditionally
+  // rendered — it unmounts in the collapsed-success branch and is absent when
+  // a finished/recent brief opens already collapsed — so a `[]`-deps effect
+  // would never re-attach after the node remounts on expand. A callback ref
+  // runs on every mount/unmount of the element, keeping the listener live.
+  const wheelCleanupRef = useRef<(() => void) | null>(null);
+  const setStepsRef = useCallback((el: HTMLDivElement | null) => {
+    // Detach from any previous node first.
+    if (wheelCleanupRef.current) {
+      wheelCleanupRef.current();
+      wheelCleanupRef.current = null;
+    }
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       if (el.scrollWidth <= el.clientWidth || e.deltaY === 0) return;
@@ -512,7 +521,7 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
       el.scrollLeft += e.deltaY;
     };
     el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
+    wheelCleanupRef.current = () => el.removeEventListener('wheel', onWheel);
   }, []);
 
   // Collapsed one-line summary bar shown when success and not expanded
@@ -563,8 +572,8 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
           <span className="lp" aria-hidden="true" />
           agent log
         </span>
-        {/* Bug #1: non-passive wheel listener via useEffect; Bug #2: fade mask added via CSS */}
-        <div ref={stepsRef} className="steps">
+        {/* Bug #1: non-passive wheel listener via callback ref; Bug #2: fade mask added via CSS */}
+        <div ref={setStepsRef} className="steps">
           {displayLog.map((step) => {
             if (step.type === 'tool_call') {
               return <ToolStep key={step.id} step={step} />;
