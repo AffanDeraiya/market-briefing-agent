@@ -16,7 +16,17 @@ DISCLAIMER = (
     " Data via Yahoo Finance; may be delayed or inaccurate."
 )
 
-__all__ = ["Anomaly", "Bullet", "Citation", "DISCLAIMER", "MarketBrief", "Signal", "parse_brief"]
+__all__ = [
+    "Anomaly",
+    "Bullet",
+    "Citation",
+    "ClaimVerdict",
+    "DISCLAIMER",
+    "MarketBrief",
+    "Signal",
+    "Verification",
+    "parse_brief",
+]
 
 
 # ---------------------------------------------------------------------------
@@ -109,6 +119,33 @@ class Signal(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Claim Verifier result models
+# ---------------------------------------------------------------------------
+
+
+class ClaimVerdict(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # Claim address: "bull_case:0" | "bear_case:1" | "news_highlights:2" |
+    # "risks:0" | "anomaly:2026-06-09" | "signal"
+    target: str
+    label: str  # short human label (truncated claim text, <= ~80 chars)
+    verdict: Literal["supported", "partial", "unsupported"]
+    action: Literal["kept", "confidence_downgraded", "dropped", "neutralized"]
+    note: str
+
+
+class Verification(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    verdicts: list[ClaimVerdict]
+    checked: int  # number of claims audited
+    supported: int  # verdict == "supported"
+    adjusted: int  # action in {confidence_downgraded, neutralized}
+    dropped: int  # action == "dropped"
+
+
+# ---------------------------------------------------------------------------
 # MarketBrief
 # ---------------------------------------------------------------------------
 
@@ -133,6 +170,7 @@ class MarketBrief(BaseModel):
     bear_case: list[Bullet]
     risks: list[Bullet]
     signal: Signal | None = None
+    verification: Verification | None = None
     citations: list[Citation]
     disclaimer: str
 

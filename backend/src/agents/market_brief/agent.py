@@ -120,6 +120,7 @@ def run_agent(
     emit: Emitter | None = None,
     recorder: CassetteRecorder | None = None,
     today: str | None = None,
+    verify_llm: bool = True,
 ) -> RunResult:
     """Run the market-brief agent graph and return a RunResult.
 
@@ -131,6 +132,9 @@ def run_agent(
     emit:     Optional Emitter; defaults to noop_emitter.
     recorder: Optional CassetteRecorder; pass to persist a replay cassette.
     today:    ISO date injected as "today"; defaults to the real date.today().
+    verify_llm: Run the LLM semantic layer of the Claim Verifier and stream the
+              before→after revision. Set False for offline replay/eval, where the
+              deterministic-only verifier runs silently (no extra LLM call).
     """
     _emit: Emitter = emit if emit is not None else noop_emitter
     _today: str = today if today is not None else date.today().isoformat()
@@ -171,7 +175,12 @@ def run_agent(
         "usage": None,
     }
     config: RunnableConfig = {
-        "configurable": {"emit": _emit, "backend": _backend, "recorder": recorder},
+        "configurable": {
+            "emit": _emit,
+            "backend": _backend,
+            "recorder": recorder,
+            "verify_llm": verify_llm,
+        },
         "recursion_limit": 50,
     }
     final: GraphState = _GRAPH.invoke(init, config=config)

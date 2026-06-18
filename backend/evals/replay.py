@@ -150,6 +150,7 @@ def replay_cassette(path: str | Path) -> ReplayResult:
             cas["request"]["period"],
             backend=backend,
             today=today,
+            verify_llm=False,  # deterministic-only verifier offline; no recorded verifier turn
         )
 
     return ReplayResult(

@@ -131,9 +131,51 @@ def build_repair_message(error: str) -> str:
     )
 
 
+# ---------------------------------------------------------------------------
+# Claim Verifier (second-pass auditor) — Phase 2
+# ---------------------------------------------------------------------------
+
+VERIFIER_SYSTEM_PROMPT = """\
+You are a STRICT fact-checking auditor for an equity-research brief. Another \
+agent wrote the brief and cited sources; your only job is to judge, for each \
+listed claim, whether the RETRIEVED EVIDENCE actually supports it. You do not \
+rewrite the brief and you never use outside knowledge — judge ONLY against the \
+evidence provided.
+
+For each claim you are given a target id, the claim text, and the evidence its \
+citations point to. Return a verdict:
+- "supported"   — the evidence clearly states or directly implies the claim.
+- "partial"     — the evidence is related but weaker, indirect, or only \
+partly backs the claim.
+- "unsupported" — the evidence does not back the claim, or the cited source \
+says something different.
+
+Be conservative and fair: a claim that the evidence reasonably backs is \
+"supported"; reserve "unsupported" for claims the evidence genuinely fails to \
+establish. A one-line, specific note must justify each non-"supported" verdict.
+
+Output ONE JSON object and nothing else — no prose, no code fences:
+{"verdicts": [ {"target": "<id>", "verdict": \
+"supported"|"partial"|"unsupported", "note": "<short reason>"} ]}
+Include every target you were given exactly once. Do not add targets that were \
+not provided."""
+
+
+def build_verifier_message(claims_block: str, evidence_block: str) -> str:
+    """The user turn for the verifier: the claims to audit + their evidence."""
+    return (
+        "Audit these claims against the retrieved evidence and return the JSON "
+        "verdicts object.\n\n"
+        f"## CLAIMS\n{claims_block}\n\n"
+        f"## RETRIEVED EVIDENCE\n{evidence_block}"
+    )
+
+
 __all__ = [
     "SYSTEM_PROMPT",
     "FINALIZE_NOW_MESSAGE",
+    "VERIFIER_SYSTEM_PROMPT",
     "build_user_message",
     "build_repair_message",
+    "build_verifier_message",
 ]

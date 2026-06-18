@@ -111,8 +111,11 @@ Request: `{"ticker": "AAPL", "period": "3mo"}`
 | `tool_result` | `{seq, name, ok: bool, summary: str, ms: int}` | summary ≤200 chars; full payload NOT sent (token/log hygiene) except `chart_data` below |
 | `chart_data` | `{ohlcv: [...], anomalies: [...]}` | sent twice: once (empty anomalies) after price history loads, then again after `detect_anomalies` with full anomaly objects; feeds the chart |
 | `anomaly_focus` | `{date, kind, magnitude?, severity?}` | emitted when agent starts investigating an anomaly; UI highlights marker; `magnitude`/`severity` present when `detect_anomalies` has already run |
-| `brief` | full MarketBrief (§4) | terminal-success |
-| `usage` | `{input_tokens, output_tokens, est_cost_usd, tool_calls, iterations, latency_ms}` | always before close |
+| `brief` | full MarketBrief (§4) | terminal-success. On **live runs the verifier emits the brief twice**: the *composed* brief from `parse_and_enrich`, then the *revised* brief after `verify` (L2 before→after). Offline replay (`verify_llm=False`) emits it once. |
+| `verify_started` | `{claims_total: int}` | live only — the Claim Verifier began auditing the composed brief |
+| `claim_verdict` | `{target, label, verdict: "supported"\|"partial"\|"unsupported", action: "kept"\|"confidence_downgraded"\|"dropped"\|"neutralized", note}` | live only — one per audited claim; `target` is a claim address (`"bull_case:0"`, `"anomaly:2026-06-09"`, `"signal"`) |
+| `verify_done` | `{checked, supported, adjusted, dropped}` | live only — verification summary |
+| `usage` | `{input_tokens, output_tokens, est_cost_usd, tool_calls, iterations, latency_ms}` | always before close. Includes the verifier's LLM tokens (not counted as an extra iteration/tool call) |
 | `error` | `{kind: "validation"|"budget"|"timeout"|"parse"|"upstream"|"internal", message}` | terminal-failure |
 
 ## 4. MarketBrief (final output schema)
@@ -143,6 +146,17 @@ class Signal(BaseModel):     # the agent's overall conclusion (interpretation, N
     citations: list[str]     # ≥1 unless stance == "neutral"; must resolve to real Citation ids
     confidence: Literal["high", "medium", "low"]
 
+class ClaimVerdict(BaseModel):   # one per audited claim (Claim Verifier output)
+    target: str              # claim address: "bull_case:0" | "anomaly:2026-06-09" | "signal" | ...
+    label: str               # short human label (truncated claim text)
+    verdict: Literal["supported", "partial", "unsupported"]
+    action: Literal["kept", "confidence_downgraded", "dropped", "neutralized"]
+    note: str
+
+class Verification(BaseModel):   # the verifier's audit summary (attached to the revised brief)
+    verdicts: list[ClaimVerdict]
+    checked: int; supported: int; adjusted: int; dropped: int
+
 class MarketBrief(BaseModel):
     ticker: str; name: str; as_of: str; period: str
     snapshot: dict           # price, change_1d/1m/period, currency, market_cap, pe, sector, low_52w, high_52w
@@ -157,6 +171,7 @@ class MarketBrief(BaseModel):
     bear_case: list[Bullet]         # ≤4
     risks: list[Bullet]             # ≤3
     signal: Signal | None = None    # overall buy/sell conclusion; optional (older cassettes omit it)
+    verification: Verification | None = None  # Claim Verifier audit; set on the revised brief; optional
     citations: list[Citation]
     disclaimer: str          # fixed string, asserted in tests
 ```
@@ -164,6 +179,8 @@ class MarketBrief(BaseModel):
 Validation enforced at parse: every citation id referenced exists (including `signal.citations`); bullets outside `anomalies` have ≥1 citation; `signal.citations` ≥1 unless `signal.stance == "neutral"`; unknown fields rejected.
 
 **Signal (overall conclusion).** The agent ends a brief with an optional `signal`: a 5-point stance (`buy`/`accumulate`/`neutral`/`reduce`/`sell`) synthesised from the brief's own cited evidence. It is an **interpretation, not financial advice** — the immutable `disclaimer` still applies and renders next to it. The LLM authors `stance`/`rationale`/`citations`/`confidence`; the backend stamps `signal.as_of = brief.as_of` deterministically (the LLM never authors the date). Grounding mirrors the bullet rules: at finalize, `_enforce_citation_grounding` filters `signal.citations` against `seen_urls`, and a signal left with no grounded support is **neutralised** — `stance: "neutral"`, `confidence: "low"`, `rationale: "Insufficient grounded evidence for a directional call."` — rather than failing the brief (rules.md: honest neutrality beats an invented call). The agent prompt **requires** a signal on every new brief (step-7 "Conclude", reinforced in the finalize-now and repair messages) — choosing `neutral` when there's no edge rather than omitting it. The schema field is kept optional ONLY for backward-compat: the 6 cassettes recorded before the field existed still pass structure compliance unchanged.
+
+**Verification (Claim Verifier).** The `verify` graph node audits the composed brief's cited claims against the evidence retrieved during the run, then **mutates** the brief: a `partial` claim's confidence is downgraded, an `unsupported` bullet is dropped, and an `unsupported` anomaly/signal is neutralized (same philosophy as the grounding guard — honest output over a pretty one). It runs in two layers: a **deterministic** layer (always; conservative, no-ops on clean briefs so the eval corpus is unaffected) and an **LLM semantic** layer (live only — gated by `verify_llm`, skipped in replay so the 6 cassettes need no verifier turn and the gate stays 100%/100%). On live runs the node emits the composed brief, then `verify_started`/`claim_verdict`/`verify_done`, then the revised brief is emitted by `emit_final` (the L2 before→after revision). The verifier's LLM tokens are added to `usage` but do not count as an extra iteration/tool call. The `verification` field is optional (older cassettes omit it).
 
 **Citation grounding (enforced at finalize).** Before validation, `parse_final` rejects any `news`/`web` citation whose `url` was not seen in a tool result during the run (the run tracks `seen_urls` from every tool output; the check mirrors the eval's `grounded_urls`). This deterministically blocks fabricated source URLs — a real failure mode of weaker free-tier models. References are repaired, not just dropped: a bullet left with only ungrounded citations is removed entirely, and an anomaly that loses all support falls back to `confidence: "low"` with a "No public cause could be confirmed from the retrieved sources." explanation (rules.md: "no clear public cause found" beats an invented one). `kind: "tool"` citations are always grounded.
 

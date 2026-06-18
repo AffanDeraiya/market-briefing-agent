@@ -27,11 +27,14 @@ from .events import (
     EVENT_ANOMALY_FOCUS,
     EVENT_BRIEF,
     EVENT_CHART_DATA,
+    EVENT_CLAIM_VERDICT,
     EVENT_ERROR,
     EVENT_STEP,
     EVENT_TOOL_CALL,
     EVENT_TOOL_RESULT,
     EVENT_USAGE,
+    EVENT_VERIFY_DONE,
+    EVENT_VERIFY_STARTED,
     Emitter,
     estimate_cost_usd,
     noop_emitter,
@@ -46,6 +49,7 @@ from .state import (
     RunState,
 )
 from .tools import execute_tool, tool_specs
+from .utils.verify import count_claims, run_verification
 
 try:
     from openai import RateLimitError as _OpenAIRateLimitError
@@ -720,8 +724,47 @@ def repair(state: GraphState, config: RunnableConfig) -> dict[str, Any]:
 
 
 def verify(state: GraphState, config: RunnableConfig) -> dict[str, Any]:
-    """Claim Verifier. Phase 1: pass-through no-op (Phase 2 adds the hybrid checks)."""
-    return {}
+    """Claim Verifier: audit the brief's cited claims against retrieved evidence,
+    mutate it (downgrade / drop / neutralize), and stream the verdicts.
+
+    Live path (verify_llm=True): emit the COMPOSED brief first, then verify_started
+    + per-claim verdicts + verify_done, so the UI can show the before→after
+    revision. Replay/eval path (verify_llm=False): deterministic-only, silent —
+    identical event/score profile to before the verifier existed.
+    """
+    run = state["run"]
+    cfg = _conf(config)
+    emit: Emitter = cfg.get("emit") or noop_emitter
+    backend: LLMBackend = cfg["backend"]
+    verify_llm = bool(cfg.get("verify_llm", True))
+    brief = state.get("brief")
+    if brief is None:
+        return {}
+
+    if verify_llm:
+        # Render the composed brief BEFORE revising it (L2 "before").
+        emit(EVENT_BRIEF, brief.model_dump(mode="json"))
+        emit(EVENT_VERIFY_STARTED, {"claims_total": count_claims(brief)})
+
+    result = run_verification(brief, run, backend=backend, verify_llm=verify_llm)
+
+    if verify_llm and result is not None:
+        for verdict in result.verdicts:
+            emit(EVENT_CLAIM_VERDICT, verdict.model_dump(mode="json"))
+        emit(
+            EVENT_VERIFY_DONE,
+            {
+                "checked": result.checked,
+                "supported": result.supported,
+                "adjusted": result.adjusted,
+                "dropped": result.dropped,
+            },
+        )
+
+    return {
+        "brief": brief,
+        "verification": result.model_dump(mode="json") if result is not None else None,
+    }
 
 
 def emit_final(state: GraphState, config: RunnableConfig) -> dict[str, Any]:
