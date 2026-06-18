@@ -42,6 +42,14 @@ broader context and fetch_page when a snippet is not enough to explain an event.
 5. Recent context: do one general recent-news sweep for the company.
 6. Compose: when you have enough evidence, output the final MarketBrief JSON. \
 Do not call more tools after you begin composing.
+7. Conclude: end the brief with a "signal" — your single overall stance on the \
+ticker as of today, on a 5-point scale (buy / accumulate / neutral / reduce / \
+sell). This is your interpretation of the evidence you gathered, NOT financial \
+advice. It must be consistent with, and cited from, the bull/bear/risk points \
+you already wrote — reference those same citation ids. When the evidence is \
+mixed or thin and you have no clear edge, choose "neutral" (a neutral call needs \
+no citations). Set "confidence" honestly: "high" only when the cited evidence \
+strongly and one-sidedly supports the stance. Never overstate conviction.
 
 # Tool-derived numbers
 When a sentence states a tool-computed fact (e.g. "RSI of 72 signals overbought" \
@@ -70,6 +78,10 @@ deterministically from tool outputs. Do NOT author those numbers — emit only \
   "bull_case":  [ {{ "text": str, "citations": [str] }} ],       // <=4, each >=1 citation
   "bear_case":  [ {{ "text": str, "citations": [str] }} ],       // <=4, each >=1 citation
   "risks":      [ {{ "text": str, "citations": [str] }} ],       // <=3, each >=1 citation
+  "signal": {{ "stance": "buy"|"accumulate"|"neutral"|"reduce"|"sell",
+               "rationale": str,           // 1-2 sentences; your overall conclusion
+               "citations": [str],         // reuse bull/bear/risk ids; [] only if "neutral"
+               "confidence": "high"|"medium"|"low" }},   // omit "as_of"; backend stamps it
   "citations": [ {{ "id": "c1", "url": str|null, "title": str,
                     "kind": "news"|"web"|"tool" }} ],
   "disclaimer": "{DISCLAIMER}"

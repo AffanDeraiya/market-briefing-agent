@@ -740,6 +740,67 @@
     background: var(--pos);
   }
 
+  /* ---- Signal hero pill ---- */
+  .signal-hero {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--panel);
+    border: 1px solid var(--bd);
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-bottom: 26px;
+    width: 100%;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: border-color 0.15s;
+    text-align: left;
+  }
+
+  .signal-hero:hover {
+    border-color: var(--accent);
+  }
+
+  .signal-hero .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .signal-hero .sub {
+    font: 400 12px 'Inter';
+    color: var(--ts);
+  }
+
+  .signal-hero .asof {
+    margin-left: auto;
+    font: 500 11.5px 'JetBrains Mono';
+    color: var(--tt);
+  }
+
+  /* ---- Signal panel card ---- */
+  .signal-panel {
+    background: var(--raised);
+    border: 1px solid var(--bd);
+    border-left: 3px solid;
+    border-radius: 12px;
+    padding: 20px 22px;
+  }
+
+  .signal-verdict {
+    font: 700 24px 'JetBrains Mono';
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+  }
+
+  .signal-note {
+    font-size: 12px;
+    color: var(--tt);
+    margin-top: 10px;
+    font-style: italic;
+  }
+
   .bul {
     list-style: none;
     display: flex;

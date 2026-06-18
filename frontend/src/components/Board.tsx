@@ -14,6 +14,7 @@ import { NewsList } from './NewsList';
 import { BullBear } from './BullBear';
 import { Risks } from './Risks';
 import { Sources } from './Sources';
+import { SignalHero, SignalPanelSection } from './SignalPanel';
 
 interface Props {
   brief: MarketBrief | null;
@@ -92,16 +93,30 @@ export function Board({
   return (
     <div className="board">
       {/* Chart */}
-      <SectionWrapper ready={!!chartData} isStreaming={isStreaming} minHeight={260}>
+      <SectionWrapper
+        ready={!!chartData}
+        isStreaming={isStreaming}
+        minHeight={260}
+      >
         {chartData ? (
-          <PriceChart chartData={chartData} period={period} ticker={ticker} currencySymbol={sym} />
+          <PriceChart
+            chartData={chartData}
+            period={period}
+            ticker={ticker}
+            currencySymbol={sym}
+          />
         ) : (
           <div className="chartbox" style={{ minHeight: 260 }} />
         )}
       </SectionWrapper>
 
       {/* Snapshot bar */}
-      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={60} delay={80}>
+      <SectionWrapper
+        ready={!!brief}
+        isStreaming={isStreaming}
+        minHeight={60}
+        delay={80}
+      >
         {brief ? (
           <SnapshotBar snapshot={brief.snapshot} period={period} />
         ) : (
@@ -110,7 +125,12 @@ export function Board({
       </SectionWrapper>
 
       {/* 52-week range bar */}
-      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={70} delay={120}>
+      <SectionWrapper
+        ready={!!brief}
+        isStreaming={isStreaming}
+        minHeight={70}
+        delay={120}
+      >
         {brief ? (
           <RangeBar snapshot={brief.snapshot} />
         ) : (
@@ -118,8 +138,16 @@ export function Board({
         )}
       </SectionWrapper>
 
+      {/* Signal hero — compact stance pill placed before Section 01 */}
+      {brief?.signal && <SignalHero signal={brief.signal} />}
+
       {/* Section 01 — Technical read */}
-      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={80} delay={160}>
+      <SectionWrapper
+        ready={!!brief}
+        isStreaming={isStreaming}
+        minHeight={80}
+        delay={160}
+      >
         {brief ? (
           <TechnicalRead brief={brief} />
         ) : (
@@ -128,7 +156,12 @@ export function Board({
       </SectionWrapper>
 
       {/* Section 02 — Anomaly investigated */}
-      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={80} delay={200}>
+      <SectionWrapper
+        ready={!!brief}
+        isStreaming={isStreaming}
+        minHeight={80}
+        delay={200}
+      >
         {brief ? (
           <AnomalySection brief={brief} chartSigmas={sigmas} />
         ) : (
@@ -137,7 +170,12 @@ export function Board({
       </SectionWrapper>
 
       {/* Section 03 — News */}
-      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={80} delay={240}>
+      <SectionWrapper
+        ready={!!brief}
+        isStreaming={isStreaming}
+        minHeight={80}
+        delay={240}
+      >
         {brief ? (
           <NewsList brief={brief} />
         ) : (
@@ -146,7 +184,12 @@ export function Board({
       </SectionWrapper>
 
       {/* Section 04 — Bull & bear */}
-      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={80} delay={280}>
+      <SectionWrapper
+        ready={!!brief}
+        isStreaming={isStreaming}
+        minHeight={80}
+        delay={280}
+      >
         {brief ? (
           <BullBear brief={brief} />
         ) : (
@@ -155,7 +198,12 @@ export function Board({
       </SectionWrapper>
 
       {/* Section 05 — Risks */}
-      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={80} delay={320}>
+      <SectionWrapper
+        ready={!!brief}
+        isStreaming={isStreaming}
+        minHeight={80}
+        delay={320}
+      >
         {brief ? (
           <Risks brief={brief} />
         ) : (
@@ -164,13 +212,21 @@ export function Board({
       </SectionWrapper>
 
       {/* Section 06 — Sources */}
-      <SectionWrapper ready={!!brief} isStreaming={isStreaming} minHeight={80} delay={360}>
+      <SectionWrapper
+        ready={!!brief}
+        isStreaming={isStreaming}
+        minHeight={80}
+        delay={360}
+      >
         {brief ? (
           <Sources brief={brief} />
         ) : (
           <div className="doc-sec" style={{ minHeight: 80 }} />
         )}
       </SectionWrapper>
+
+      {/* Section 07 — Signal (optional conclusion) */}
+      {brief?.signal && <SignalPanelSection brief={brief} />}
 
       {/* Streaming hint */}
       {isStreaming && !brief && (

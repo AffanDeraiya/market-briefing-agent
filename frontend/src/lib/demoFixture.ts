@@ -255,6 +255,14 @@ export const DEMO_BRIEF: MarketBrief = {
       citations: ['c8'],
     },
   ],
+  signal: {
+    stance: 'accumulate',
+    as_of: '2026-06-13',
+    rationale:
+      'Momentum and the product catalyst support a constructive stance, tempered by a stretched valuation.',
+    citations: ['c2', 'c3'],
+    confidence: 'medium',
+  },
   citations: [
     {
       id: 'c1',

@@ -136,6 +136,13 @@ class Bullet(BaseModel):
     text: str
     citations: list[str]     # ≥1 enforced for news_highlights/bull/bear/risks
 
+class Signal(BaseModel):     # the agent's overall conclusion (interpretation, NOT advice)
+    stance: Literal["buy", "accumulate", "neutral", "reduce", "sell"]
+    as_of: str               # stamped deterministically by backend = brief.as_of (LLM omits it)
+    rationale: str           # 1-2 sentences synthesising the cited evidence; non-empty
+    citations: list[str]     # ≥1 unless stance == "neutral"; must resolve to real Citation ids
+    confidence: Literal["high", "medium", "low"]
+
 class MarketBrief(BaseModel):
     ticker: str; name: str; as_of: str; period: str
     snapshot: dict           # price, change_1d/1m/period, currency, market_cap, pe, sector, low_52w, high_52w
@@ -149,11 +156,14 @@ class MarketBrief(BaseModel):
     bull_case: list[Bullet]         # ≤4
     bear_case: list[Bullet]         # ≤4
     risks: list[Bullet]             # ≤3
+    signal: Signal | None = None    # overall buy/sell conclusion; optional (older cassettes omit it)
     citations: list[Citation]
     disclaimer: str          # fixed string, asserted in tests
 ```
 
-Validation enforced at parse: every citation id referenced exists; bullets outside `anomalies` have ≥1 citation; unknown fields rejected.
+Validation enforced at parse: every citation id referenced exists (including `signal.citations`); bullets outside `anomalies` have ≥1 citation; `signal.citations` ≥1 unless `signal.stance == "neutral"`; unknown fields rejected.
+
+**Signal (overall conclusion).** The agent ends a brief with an optional `signal`: a 5-point stance (`buy`/`accumulate`/`neutral`/`reduce`/`sell`) synthesised from the brief's own cited evidence. It is an **interpretation, not financial advice** — the immutable `disclaimer` still applies and renders next to it. The LLM authors `stance`/`rationale`/`citations`/`confidence`; the backend stamps `signal.as_of = brief.as_of` deterministically (the LLM never authors the date). Grounding mirrors the bullet rules: at finalize, `_enforce_citation_grounding` filters `signal.citations` against `seen_urls`, and a signal left with no grounded support is **neutralised** — `stance: "neutral"`, `confidence: "low"`, `rationale: "Insufficient grounded evidence for a directional call."` — rather than failing the brief (rules.md: honest neutrality beats an invented call). The field is optional so the 6 pre-existing cassettes (recorded before it existed) still pass structure compliance unchanged.
 
 **Citation grounding (enforced at finalize).** Before validation, `parse_final` rejects any `news`/`web` citation whose `url` was not seen in a tool result during the run (the run tracks `seen_urls` from every tool output; the check mirrors the eval's `grounded_urls`). This deterministically blocks fabricated source URLs — a real failure mode of weaker free-tier models. References are repaired, not just dropped: a bullet left with only ungrounded citations is removed entirely, and an anomaly that loses all support falls back to `confidence: "low"` with a "No public cause could be confirmed from the retrieved sources." explanation (rules.md: "no clear public cause found" beats an invented one). `kind: "tool"` citations are always grounded.
 
