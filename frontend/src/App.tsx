@@ -8,7 +8,7 @@ import { RunHeader } from './components/RunHeader';
 import { Board } from './components/Board';
 import { DisclaimerFooter } from './components/DisclaimerFooter';
 
-const GITHUB_URL = 'https://github.com/affan-dev/market-briefing-agent';
+const GITHUB_URL = 'https://github.com/AffanDeraiya/market-briefing-agent';
 
 export function App() {
   const status = useRunStore((s) => s.status);
