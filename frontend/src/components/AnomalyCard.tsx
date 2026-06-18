@@ -48,17 +48,17 @@ export function AnomalyCard({ anomaly, sigma, citations }: Props) {
       onMouseEnter={() => setHoveredAnomaly(anomaly.date)}
       onMouseLeave={() => setHoveredAnomaly(null)}
     >
-      <div className="flag">
-        <div className="date mono">{anomaly.date}</div>
-        <div className="mag">{anomaly.magnitude}</div>
-        {displaySigma && <span className="sigma">{displaySigma}</span>}
-      </div>
       <div className="body">
         <p className="expl">
           {stripInlineCites(anomaly.explanation)}
           <InlineCites ids={anomaly.citations} citations={citations} />
         </p>
         <ConfRow confidence={anomaly.confidence} />
+      </div>
+      <div className="flag">
+        <div className="date mono">{anomaly.date}</div>
+        <div className="mag">{anomaly.magnitude}</div>
+        {displaySigma && <span className="sigma">{displaySigma}</span>}
       </div>
     </div>
   );

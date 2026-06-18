@@ -126,6 +126,7 @@
     min-width: 0;
     overflow-x: auto;
     scrollbar-width: none;
+    overscroll-behavior: contain;
     /* Bug #1: fade gradient masks hinting more content to scroll */
     -webkit-mask-image: linear-gradient(
       to right,
@@ -310,7 +311,7 @@
     color: var(--tp);
     border: 1px solid var(--bd);
     border-radius: 10px;
-    box-shadow: 0 14px 38px rgba(20, 22, 28, 0.22);
+    box-shadow: 0 16px 40px rgba(20, 22, 28, 0.28);
     padding: 13px 14px;
     font-family: 'Inter', sans-serif;
     text-transform: none;
@@ -379,6 +380,7 @@
   .pop .prow {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
     gap: 14px;
     font-size: 11.5px;
     padding: 5px 0;
@@ -395,6 +397,10 @@
     color: var(--tp);
     font: 500 11.5px 'JetBrains Mono';
     text-align: right;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
   }
 
   .pop .pv.pos {
@@ -665,7 +671,7 @@
 
   .anom-panel {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: 1fr auto;
     gap: 22px;
     align-items: start;
     background: var(--raised);
@@ -684,7 +690,7 @@
   }
 
   .anom-panel .flag {
-    text-align: center;
+    text-align: right;
   }
 
   .anom-panel .flag .date {
@@ -1466,7 +1472,9 @@
     border-radius: 8px;
     padding: 8px 16px;
     cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
+    transition:
+      border-color 0.15s,
+      color 0.15s;
   }
 
   .err-btn-ghost:hover {

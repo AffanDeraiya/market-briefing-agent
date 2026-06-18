@@ -24,7 +24,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 
-from src.api.guards import daily_counter
+from src.api.guards import daily_counter, rate_limit_per_hour
 from src.api.limiter import limiter
 from src.api.routes import router
 
@@ -95,6 +95,7 @@ def create_app() -> FastAPI:
             "status": "ok",
             "model": os.environ.get("LLM_MODEL", "unconfigured"),
             "daily_briefs_remaining": daily_counter.remaining(),
+            "briefs_per_hour": rate_limit_per_hour(),
         }
 
     return _app

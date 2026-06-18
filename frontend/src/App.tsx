@@ -1,4 +1,5 @@
 // App root — routes between Home and Run based on store status.
+import { useEffect } from 'react';
 import { useRunStore } from './store/runStore';
 import type { Period } from './lib/types';
 import { Home } from './components/Home';
@@ -21,10 +22,15 @@ export function App() {
   const usage = useRunStore((s) => s.usage);
   const error = useRunStore((s) => s.error);
   const retryAfterS = useRunStore((s) => s.retryAfterS);
+  const briefsPerHour = useRunStore((s) => s.briefsPerHour);
   const startDemo = useRunStore((s) => s.startDemo);
   const startRun = useRunStore((s) => s.startRun);
   const reset = useRunStore((s) => s.reset);
   const stopRun = useRunStore((s) => s.stopRun);
+
+  useEffect(() => {
+    useRunStore.getState().fetchConfig();
+  }, []);
 
   const isRunView =
     status === 'streaming' ||
@@ -125,8 +131,8 @@ export function App() {
               color: 'var(--anom)',
             }}
           >
-            <strong>Rate limit reached.</strong> Limit: 5 briefs/hour per
-            visitor.{' '}
+            <strong>Rate limit reached.</strong> Limit: {briefsPerHour ?? 5}{' '}
+            briefs/hour per visitor.{' '}
             {retryAfterS !== null
               ? `Try again in ${Math.ceil(retryAfterS / 60)}m.`
               : 'Try again in a few minutes.'}
@@ -156,8 +162,8 @@ export function App() {
               <span className="err-title">Daily budget exhausted</span>
             </div>
             <p className="err-msg">
-              The demo's daily token budget has been reached. The project is open-source —
-              clone it and add your own key to keep running.{' '}
+              The demo's daily token budget has been reached. The project is
+              open-source — clone it and add your own key to keep running.{' '}
               <a
                 href={GITHUB_URL}
                 target="_blank"
@@ -168,7 +174,9 @@ export function App() {
               </a>
             </p>
             <div className="err-actions">
-              <button className="err-btn-ghost" onClick={handleBackHome}>← Home</button>
+              <button className="err-btn-ghost" onClick={handleBackHome}>
+                ← Home
+              </button>
             </div>
           </div>
         </div>
@@ -184,8 +192,12 @@ export function App() {
             </div>
             <p className="err-msg">{error}</p>
             <div className="err-actions">
-              <button className="err-btn-primary" onClick={handleTryAgain}>↺ Try again</button>
-              <button className="err-btn-ghost" onClick={handleBackHome}>← Home</button>
+              <button className="err-btn-primary" onClick={handleTryAgain}>
+                ↺ Try again
+              </button>
+              <button className="err-btn-ghost" onClick={handleBackHome}>
+                ← Home
+              </button>
             </div>
           </div>
         </div>
@@ -210,7 +222,8 @@ export function App() {
       {/* Main board — show while streaming/success, or when stopped/error with partial data */}
       {(status === 'streaming' ||
         status === 'success' ||
-        ((status === 'error' || status === 'stopped') && !!(brief || chartData))) && (
+        ((status === 'error' || status === 'stopped') &&
+          !!(brief || chartData))) && (
         <Board
           brief={brief}
           chartData={chartData}

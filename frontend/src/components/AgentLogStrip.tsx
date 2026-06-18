@@ -54,7 +54,12 @@ interface PortalPopProps {
   alignRight?: boolean;
 }
 
-function PortalPop({ anchorRef, visible, children, alignRight }: PortalPopProps) {
+function PortalPop({
+  anchorRef,
+  visible,
+  children,
+  alignRight,
+}: PortalPopProps) {
   const [rect, setRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
@@ -72,9 +77,7 @@ function PortalPop({ anchorRef, visible, children, alignRight }: PortalPopProps)
   // Position below the anchor
   const top = rect.bottom + GAP;
   // Prefer left-aligned; clamp so it doesn't overflow the right viewport edge
-  let left = alignRight
-    ? rect.right - CARD_WIDTH
-    : rect.left;
+  let left = alignRight ? rect.right - CARD_WIDTH : rect.left;
   // Clamp to viewport
   const maxLeft = window.innerWidth - CARD_WIDTH - MARGIN;
   if (left > maxLeft) left = maxLeft;
@@ -115,6 +118,9 @@ function ToolStepCard({ step }: { step: LogStep }) {
         .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
         .join(' · ')
     : '—';
+  const summary = step.summary ?? '—';
+  const summaryShort =
+    summary.length > 140 ? summary.slice(0, 140) + '…' : summary;
 
   return (
     <>
@@ -134,7 +140,7 @@ function ToolStepCard({ step }: { step: LogStep }) {
       </div>
       <div className="prow">
         <span className="pk">result</span>
-        <span className="pv">{step.summary ?? '—'}</span>
+        <span className="pv">{summaryShort}</span>
       </div>
       <div className="prow">
         <span className="pk">duration</span>
@@ -162,8 +168,8 @@ function AnomalyStepCard({ step }: { step: LogStep }) {
         <span className="pstat an">investigate</span>
       </div>
       <div className="pdesc">
-        The agent paused the scan to investigate this unusual day before
-        writing anything.
+        The agent paused the scan to investigate this unusual day before writing
+        anything.
       </div>
       <div className="prow">
         <span className="pk">target</span>
@@ -277,7 +283,8 @@ function deduplicateLog(log: LogStep[]): LogStep[] {
 
 /** Individual step wrapper that handles hover + portal pop. */
 function ToolStep({ step }: { step: LogStep }) {
-  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } = useHover();
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
+    useHover();
   const isDone = step.ms !== undefined;
   return (
     <div
@@ -301,7 +308,8 @@ function ToolStep({ step }: { step: LogStep }) {
 }
 
 function AnomalyStep({ step }: { step: LogStep }) {
-  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } = useHover();
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
+    useHover();
   return (
     <div
       ref={ref}
@@ -325,7 +333,8 @@ function AnomalyStep({ step }: { step: LogStep }) {
 }
 
 function ComposeStep({ step }: { step: LogStep }) {
-  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } = useHover();
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
+    useHover();
   return (
     <div
       ref={ref}
@@ -365,7 +374,8 @@ function RunStatsCell({
   isSuccess: boolean;
   onCollapse: () => void;
 }) {
-  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } = useHover();
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
+    useHover();
   return (
     <div
       ref={ref}
@@ -406,6 +416,48 @@ function RunStatsCell({
   );
 }
 
+function BudgetBar({
+  toolCallCount,
+  budgetPct,
+  budgetLabel,
+}: {
+  toolCallCount: number;
+  budgetPct: number;
+  budgetLabel: string;
+}) {
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
+    useHover();
+  return (
+    <div
+      ref={ref}
+      className="budgetbar"
+      role="progressbar"
+      aria-valuenow={budgetPct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      tabIndex={0}
+      title={budgetLabel}
+      aria-label={budgetLabel}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
+    >
+      <i style={{ width: `${budgetPct}%` }} />
+      <PortalPop anchorRef={ref} visible={active}>
+        <div className="ph">
+          <span className="pn">tool-call budget</span>
+          <span className="pstat ok">{toolCallCount}/15</span>
+        </div>
+        <div className="pdesc">
+          Every run is hard-capped — ≤15 tool calls, ≤20 iterations, 120s — to
+          keep the public demo safe and cheap.
+        </div>
+      </PortalPop>
+    </div>
+  );
+}
+
 export function AgentLogStrip({ log, usage, status, model }: Props) {
   // When status is 'success', collapse to a one-line summary bar by default.
   // User can click to re-expand.
@@ -431,16 +483,19 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
       : '$' + usage.est_cost_usd.toFixed(4)
     : null;
 
-  // Bug #1: wheel handler to translate vertical wheel into horizontal scroll
+  // Bug #1 / Bug A3: attach wheel listener imperatively (non-passive) so
+  // preventDefault actually works and vertical wheel stays in the strip.
   const stepsRef = useRef<HTMLDivElement>(null);
-  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+  useEffect(() => {
     const el = stepsRef.current;
     if (!el) return;
-    const hasOverflow = el.scrollWidth > el.clientWidth;
-    if (hasOverflow && e.deltaY !== 0) {
+    const onWheel = (e: WheelEvent) => {
+      if (el.scrollWidth <= el.clientWidth || e.deltaY === 0) return;
       e.preventDefault();
       el.scrollLeft += e.deltaY;
-    }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
   // Collapsed one-line summary bar shown when success and not expanded
@@ -470,18 +525,11 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
             <span className="expand-hint">expand</span>
           </button>
         </div>
-        {/* Bug #3: aria-label on collapsed budgetbar */}
-        <div
-          className="budgetbar"
-          role="progressbar"
-          aria-valuenow={100}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          title={budgetLabel}
-          aria-label={budgetLabel}
-        >
-          <i style={{ width: `${budgetPct}%` }} />
-        </div>
+        <BudgetBar
+          toolCallCount={toolCallCount}
+          budgetPct={budgetPct}
+          budgetLabel={budgetLabel}
+        />
       </>
     );
   }
@@ -498,12 +546,8 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
           <span className="lp" aria-hidden="true" />
           agent log
         </span>
-        {/* Bug #1: onWheel on the steps scroller; Bug #2: fade mask added via CSS */}
-        <div
-          ref={stepsRef}
-          className="steps"
-          onWheel={handleWheel}
-        >
+        {/* Bug #1: non-passive wheel listener via useEffect; Bug #2: fade mask added via CSS */}
+        <div ref={stepsRef} className="steps">
           {displayLog.map((step) => {
             if (step.type === 'tool_call') {
               return <ToolStep key={step.id} step={step} />;
@@ -527,18 +571,11 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
           onCollapse={() => setExpanded(false)}
         />
       </div>
-      {/* Bug #3: aria-label on expanded budgetbar */}
-      <div
-        className="budgetbar"
-        role="progressbar"
-        aria-valuenow={budgetPct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        title={budgetLabel}
-        aria-label={budgetLabel}
-      >
-        <i style={{ width: `${budgetPct}%` }} />
-      </div>
+      <BudgetBar
+        toolCallCount={toolCallCount}
+        budgetPct={budgetPct}
+        budgetLabel={budgetLabel}
+      />
     </>
   );
 }

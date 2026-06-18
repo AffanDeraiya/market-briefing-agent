@@ -11,11 +11,18 @@ vi.mock('../lib/sse', () => ({
   BriefStreamError: class BriefStreamError extends Error {
     status?: number;
     retryAfter?: number;
-    constructor(message: string, status?: number, retryAfter?: number) {
+    kind?: string;
+    constructor(
+      message: string,
+      status?: number,
+      retryAfter?: number,
+      kind?: string,
+    ) {
       super(message);
       this.name = 'BriefStreamError';
       this.status = status;
       this.retryAfter = retryAfter;
+      this.kind = kind;
     }
   },
 }));
