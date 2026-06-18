@@ -137,6 +137,7 @@ export function Home({ onGenerate }: Props) {
     setTicker(chip);
     setSuggestions([]);
     setShowSuggestions(false);
+    setValidation({ loading: true });
     doValidate(chip);
   };
 
@@ -239,17 +240,10 @@ export function Home({ onGenerate }: Props) {
             </span>
           )}
           {!validation.loading && validation.valid === false && ticker && (
-            <span
-              style={{
-                color: 'var(--neg)',
-                fontFamily: 'Inter',
-                fontSize: 12,
-                whiteSpace: 'nowrap',
-              }}
-            >
+            <span className="invalid">
               ✗{' '}
               {validation.error ??
-                'Not found — try Yahoo Finance symbol (e.g. RELIANCE.NS)'}
+                'Not found — try a Yahoo symbol, e.g. RELIANCE.NS'}
             </span>
           )}
           {showSuggestions && suggestions.length > 0 && (
