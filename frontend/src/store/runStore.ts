@@ -9,7 +9,7 @@ import type {
   LogStep,
   Period,
 } from '../lib/types';
-import { DEMO_EVENTS, DEMO_BRIEF, DEMO_CHART_DATA } from '../lib/demoFixture';
+import { DEMO_EVENTS, DEMO_BRIEF } from '../lib/demoFixture';
 import { streamBrief, BriefStreamError } from '../lib/sse';
 
 const BASE: string =
@@ -33,6 +33,9 @@ export interface RecentBrief {
   as_of: string;
   brief: MarketBrief;
   chartData?: ChartDataPayload;
+  log: LogStep[];
+  usage: UsagePayload | null;
+  model: string;
   /** Epoch ms at which this run was saved — use Date.now() for relative labels. */
   savedAt: number;
 }
@@ -238,7 +241,16 @@ export const useRunStore = create<RunState>((set, get) => ({
         // Save to recents only when the run truly succeeded with a valid brief.
         // Bug #16: skip saving on error / stopped / rate_limited states.
         if (nextStatus === 'success') {
-          const { brief: b, ticker, name, period, chartData: cd } = get();
+          const {
+            brief: b,
+            ticker,
+            name,
+            period,
+            chartData: cd,
+            log,
+            usage,
+            model,
+          } = get();
           if (b) {
             const entry: RecentBrief = {
               ticker,
@@ -248,6 +260,9 @@ export const useRunStore = create<RunState>((set, get) => ({
               as_of: b.as_of,
               brief: b,
               chartData: cd ?? undefined,
+              log,
+              usage,
+              model,
               savedAt: Date.now(),
             };
             const recents = [
@@ -425,67 +440,11 @@ export const useRunStore = create<RunState>((set, get) => ({
       period: r.period,
       status: 'success',
       retryAfterS: null,
-      log: DEMO_EVENTS.filter(
-        (e) =>
-          e.event === 'tool_call' ||
-          e.event === 'tool_result' ||
-          e.event === 'anomaly_focus' ||
-          e.event === 'step',
-      ).map((e, idx) => {
-        if (e.event === 'tool_call') {
-          const result = DEMO_EVENTS.find(
-            (x) => x.event === 'tool_result' && x.data.seq === e.data.seq,
-          );
-          const rd = result?.event === 'tool_result' ? result.data : undefined;
-          return {
-            id: `tc-${e.data.seq}-${idx}`,
-            type: 'tool_call' as const,
-            seq: e.data.seq,
-            name: e.data.name,
-            input: e.data.input,
-            ok: rd?.ok,
-            summary: rd?.summary,
-            ms: rd?.ms,
-          };
-        }
-        if (e.event === 'tool_result') {
-          return {
-            id: `tr-${e.data.seq}-${idx}`,
-            type: 'tool_result' as const,
-            seq: e.data.seq,
-            name: e.data.name,
-            ok: e.data.ok,
-            summary: e.data.summary,
-            ms: e.data.ms,
-          };
-        }
-        if (e.event === 'anomaly_focus') {
-          return {
-            id: `af-${e.data.date}-${idx}`,
-            type: 'anomaly_focus' as const,
-            date: e.data.date,
-            kind: e.data.kind,
-          };
-        }
-        // step
-        const sd = e.event === 'step' ? e.data : { iteration: 0, thinking: '' };
-        return {
-          id: `step-${sd.iteration}-${idx}`,
-          type: 'step' as const,
-          iteration: sd.iteration,
-          thinking: sd.thinking,
-        };
-      }),
-      chartData: r.chartData ?? DEMO_CHART_DATA,
+      log: r.log ?? [],
+      chartData: r.chartData ?? null,
       brief: r.brief,
-      usage: {
-        input_tokens: 11200,
-        output_tokens: 2700,
-        est_cost_usd: 0.0,
-        tool_calls: 6,
-        iterations: 4,
-        latency_ms: 27000,
-      },
+      usage: r.usage ?? null,
+      model: r.model ?? '',
       error: null,
       hoveredAnomaly: null,
     });

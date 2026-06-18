@@ -248,7 +248,7 @@ function RunSummaryCard({
       </div>
       <div className="prow">
         <span className="pk">model</span>
-        <span className="pv">{model || 'gemini-2.5-flash'}</span>
+        <span className="pv">{model || '—'}</span>
       </div>
       <div className="prow">
         <span className="pk">iterations</span>
