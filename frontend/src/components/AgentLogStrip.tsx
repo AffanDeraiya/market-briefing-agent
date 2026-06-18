@@ -52,6 +52,9 @@ interface PortalPopProps {
   children: React.ReactNode;
   /** If true, align right edge of card to right edge of anchor (for right-aligned cards). */
   alignRight?: boolean;
+  /** When set, center the card on this viewport X instead of the anchor's left edge.
+   *  Used by the full-width budget bar so the card follows the cursor, not the page edge. */
+  cursorX?: number;
 }
 
 function PortalPop({
@@ -59,6 +62,7 @@ function PortalPop({
   visible,
   children,
   alignRight,
+  cursorX,
 }: PortalPopProps) {
   const [rect, setRect] = useState<DOMRect | null>(null);
 
@@ -76,8 +80,14 @@ function PortalPop({
 
   // Position below the anchor
   const top = rect.bottom + GAP;
-  // Prefer left-aligned; clamp so it doesn't overflow the right viewport edge
-  let left = alignRight ? rect.right - CARD_WIDTH : rect.left;
+  // Prefer cursor-centered (wide bars), else left- or right-aligned to the anchor;
+  // clamp so it doesn't overflow either viewport edge.
+  let left =
+    cursorX != null
+      ? cursorX - CARD_WIDTH / 2
+      : alignRight
+        ? rect.right - CARD_WIDTH
+        : rect.left;
   // Clamp to viewport
   const maxLeft = window.innerWidth - CARD_WIDTH - MARGIN;
   if (left > maxLeft) left = maxLeft;
@@ -427,6 +437,9 @@ function BudgetBar({
 }) {
   const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
     useHover();
+  // Track the cursor's viewport X so the card pops under the mouse, not at the
+  // far-left edge of this full-width bar.
+  const [cursorX, setCursorX] = useState<number | undefined>(undefined);
   return (
     <div
       ref={ref}
@@ -438,13 +451,17 @@ function BudgetBar({
       tabIndex={0}
       title={budgetLabel}
       aria-label={budgetLabel}
-      onMouseEnter={onMouseEnter}
+      onMouseEnter={(e) => {
+        setCursorX(e.clientX);
+        onMouseEnter();
+      }}
+      onMouseMove={(e) => setCursorX(e.clientX)}
       onMouseLeave={onMouseLeave}
       onFocus={onFocus}
       onBlur={onBlur}
     >
       <i style={{ width: `${budgetPct}%` }} />
-      <PortalPop anchorRef={ref} visible={active}>
+      <PortalPop anchorRef={ref} visible={active} cursorX={cursorX}>
         <div className="ph">
           <span className="pn">tool-call budget</span>
           <span className="pstat ok">{toolCallCount}/15</span>

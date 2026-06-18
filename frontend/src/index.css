@@ -307,7 +307,11 @@
   .pop-portal {
     /* position:fixed set via React inline style */
     z-index: 9999;
+    /* Bug 2: hard-opaque fill + own stacking context so the sticky RunHeader
+       (backdrop-filter: blur) and the agent-log strip never bleed through it. */
     background: var(--panel);
+    background-color: #ffffff;
+    isolation: isolate;
     color: var(--tp);
     border: 1px solid var(--bd);
     border-radius: 10px;
