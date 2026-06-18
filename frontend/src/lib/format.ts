@@ -68,6 +68,14 @@ export function stripInlineCites(text: string): string {
 /** Export a MarketBrief as a Markdown string */
 import type { MarketBrief } from './types';
 
+const SIGNAL_STANCE_LABELS: Record<string, string> = {
+  buy: 'BUY',
+  accumulate: 'ACCUMULATE',
+  neutral: 'NEUTRAL',
+  reduce: 'REDUCE',
+  sell: 'SELL',
+};
+
 export function mdExport(brief: MarketBrief): string {
   const {
     ticker,
@@ -99,9 +107,7 @@ export function mdExport(brief: MarketBrief): string {
   ): string =>
     `## ${title}\n\n` +
     items
-      .map(
-        (b) => `- ${stripInlineCites(b.text)}${inlineCites(b.citations)}`,
-      )
+      .map((b) => `- ${stripInlineCites(b.text)}${inlineCites(b.citations)}`)
       .join('\n') +
     '\n\n';
 
@@ -138,19 +144,23 @@ export function mdExport(brief: MarketBrief): string {
     `## Bull & Bear\n`,
     `### Bull case\n\n` +
       bull_case
-        .map(
-          (b) => `- ${stripInlineCites(b.text)}${inlineCites(b.citations)}`,
-        )
+        .map((b) => `- ${stripInlineCites(b.text)}${inlineCites(b.citations)}`)
         .join('\n') +
       '\n',
     `\n### Bear case\n\n` +
       bear_case
-        .map(
-          (b) => `- ${stripInlineCites(b.text)}${inlineCites(b.citations)}`,
-        )
+        .map((b) => `- ${stripInlineCites(b.text)}${inlineCites(b.citations)}`)
         .join('\n') +
       '\n\n',
     bulletSection('Key Risks', risks),
+    brief.signal
+      ? [
+          `## Signal\n`,
+          `**${SIGNAL_STANCE_LABELS[brief.signal.stance]}** · ${brief.signal.confidence} confidence · as of ${brief.signal.as_of}\n`,
+          `${stripInlineCites(brief.signal.rationale)}${inlineCites(brief.signal.citations)}\n`,
+          `_AI interpretation — not financial advice._\n`,
+        ].join('\n')
+      : '',
     `## Sources\n\n${sourcesList}\n`,
     `---\n\n_${disclaimer}_`,
   ].join('\n');

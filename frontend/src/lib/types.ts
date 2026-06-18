@@ -124,6 +124,14 @@ export interface Indicators {
   volume_trend: 'rising' | 'falling' | 'flat';
 }
 
+export interface Signal {
+  stance: 'buy' | 'accumulate' | 'neutral' | 'reduce' | 'sell';
+  as_of: string;
+  rationale: string;
+  citations: string[];
+  confidence: 'high' | 'medium' | 'low';
+}
+
 export interface MarketBrief {
   ticker: string;
   name: string;
@@ -137,6 +145,7 @@ export interface MarketBrief {
   bull_case: Bullet[];
   bear_case: Bullet[];
   risks: Bullet[];
+  signal?: Signal | null;
   citations: Citation[];
   disclaimer: string;
 }

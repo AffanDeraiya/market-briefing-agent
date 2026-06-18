@@ -16,7 +16,7 @@ DISCLAIMER = (
     " Data via Yahoo Finance; may be delayed or inaccurate."
 )
 
-__all__ = ["Anomaly", "Bullet", "Citation", "DISCLAIMER", "MarketBrief", "parse_brief"]
+__all__ = ["Anomaly", "Bullet", "Citation", "DISCLAIMER", "MarketBrief", "Signal", "parse_brief"]
 
 
 # ---------------------------------------------------------------------------
@@ -81,6 +81,34 @@ class Bullet(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Signal
+# ---------------------------------------------------------------------------
+
+
+class Signal(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    stance: Literal["buy", "accumulate", "neutral", "reduce", "sell"]
+    as_of: str = ""  # stamped by backend = brief.as_of; LLM may omit
+    rationale: str
+    citations: list[str]
+    confidence: Literal["high", "medium", "low"]
+
+    @field_validator("rationale", mode="after")
+    @classmethod
+    def _rationale_nonempty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("signal.rationale must be a non-empty string")
+        return v
+
+    @model_validator(mode="after")
+    def _citations_required_unless_neutral(self) -> Signal:
+        if self.stance != "neutral" and len(self.citations) == 0:
+            raise ValueError('signal.citations must contain >=1 id unless stance is "neutral"')
+        return self
+
+
+# ---------------------------------------------------------------------------
 # MarketBrief
 # ---------------------------------------------------------------------------
 
@@ -104,6 +132,7 @@ class MarketBrief(BaseModel):
     bull_case: list[Bullet]
     bear_case: list[Bullet]
     risks: list[Bullet]
+    signal: Signal | None = None
     citations: list[Citation]
     disclaimer: str
 
@@ -142,6 +171,11 @@ class MarketBrief(BaseModel):
                 for cid in bullet.citations:
                     if cid not in defined_ids:
                         unresolved.add(cid)
+
+        if self.signal is not None:
+            for cid in self.signal.citations:
+                if cid not in defined_ids:
+                    unresolved.add(cid)
 
         if unresolved:
             raise ValueError(f"citation ids referenced but not defined: {sorted(unresolved)}")

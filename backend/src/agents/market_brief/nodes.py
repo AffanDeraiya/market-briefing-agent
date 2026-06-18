@@ -342,6 +342,9 @@ def _fixup_brief_dict(data: dict[str, Any]) -> dict[str, Any]:
 # Honest fallback when an anomaly's only support was an ungrounded citation.
 _NO_CAUSE_EXPLANATION = "No public cause could be confirmed from the retrieved sources."
 
+# Honest fallback when a signal's only support was ungrounded citations.
+_NO_SIGNAL_RATIONALE = "Insufficient grounded evidence for a directional call."
+
 
 def _collect_urls(obj: Any) -> set[str]:
     """Recursively collect non-empty string values under any key named ``"url"``.
@@ -443,6 +446,23 @@ def _enforce_citation_grounding(data: dict[str, Any], seen_urls: set[str]) -> di
             new_anoms.append(a)
         data["anomalies"] = new_anoms
 
+    signal = data.get("signal")
+    if isinstance(signal, dict):
+        original = signal.get("citations", [])
+        cites = [cid for cid in original if cid not in fabricated]
+        if original and not cites:
+            _log.warning("[grounding] signal lost all support → neutral/low")
+            signal = {
+                **signal,
+                "stance": "neutral",
+                "confidence": "low",
+                "citations": [],
+                "rationale": _NO_SIGNAL_RATIONALE,
+            }
+        else:
+            signal = {**signal, "citations": cites}
+        data["signal"] = signal
+
     return data
 
 
@@ -475,6 +495,10 @@ def attach_market_data(state: RunState, brief: MarketBrief) -> None:
     Rules.md: the LLM never owns these numbers. Best-effort — if a tool was not
     called (e.g. in unit tests), the corresponding fields are left untouched.
     """
+    # The LLM never authors dates — stamp the signal's as_of from the brief's.
+    if brief.signal is not None:
+        brief.signal.as_of = brief.as_of
+
     if state.indicators_out:
         ind = state.indicators_out
         mdd = ind.get("max_drawdown_pct")
