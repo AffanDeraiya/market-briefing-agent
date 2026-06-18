@@ -8,6 +8,7 @@ dependencies = [
     "ddgs>=9.14.4",
     "fastapi>=0.115",
     "httpx>=0.28.1",
+    "langgraph>=1.2.5",
     "openai>=1.50",
     "pandas>=3.0.3",
     "pyarrow>=24.0.0",
