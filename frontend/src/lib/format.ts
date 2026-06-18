@@ -57,7 +57,12 @@ export function fmtCap(n: number | null | undefined, symbol = '$'): string {
  */
 export function stripInlineCites(text: string): string {
   // Match "(c\d+)" or "(c\d+, c\d+, …)" with optional whitespace
-  return text.replace(/\s*\(\s*c\d+(?:\s*,\s*c\d+)*\s*\)/g, '').trim();
+  let result = text.replace(/\s*\(\s*c\d+(?:\s*,\s*c\d+)*\s*\)/g, '');
+  // Second pass: remove any now-empty brackets/parens left behind (e.g. "[(c2)]"
+  // becomes "[]" after the first pass — strip those too, then tidy up spacing.
+  result = result.replace(/\[\s*\]/g, '').replace(/\(\s*\)/g, '');
+  // Collapse doubled spaces introduced by removals, then trim.
+  return result.replace(/  +/g, ' ').trim();
 }
 
 /** Export a MarketBrief as a Markdown string */

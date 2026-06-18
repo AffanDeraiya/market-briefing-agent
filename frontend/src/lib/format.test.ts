@@ -45,4 +45,10 @@ describe('stripInlineCites', () => {
     ));
   it('returns empty string unchanged', () =>
     expect(stripInlineCites('')).toBe(''));
+  it('strips bracketed cite leaving no stray []', () =>
+    expect(stripInlineCites('trade intensity. [(c2)] more')).toBe(
+      'trade intensity. more',
+    ));
+  it('strips empty parens left after cite removal', () =>
+    expect(stripInlineCites('foo ()')).toBe('foo'));
 });

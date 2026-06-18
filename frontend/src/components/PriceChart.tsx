@@ -1,7 +1,7 @@
 // Price chart — Recharts ComposedChart replacing hand-rolled SVG.
 // Preserves identical visual: price line + faint volume bars + amber anomaly pin + crosshair tooltip.
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -79,6 +79,8 @@ interface AnomalyPinProps {
   /** Vertical offset for the callout pill, to stagger clustered pins */
   stackOffset?: number;
   severity?: 'high' | 'medium';
+  /** Measured pixel width of the chart container, used to clamp the right edge */
+  chartWidth?: number;
 }
 
 function AnomalyPin({
@@ -90,11 +92,14 @@ function AnomalyPin({
   onMouseLeave,
   stackOffset = 0,
   severity = 'high',
+  chartWidth = 0,
 }: AnomalyPinProps) {
   const calloutW = 148;
   const calloutH = 22;
   const pinHeight = 36 + stackOffset;
-  const rx = Math.max(cx - calloutW / 2, 2);
+  // Clamp pill left edge (≥2px) and right edge (≤ chartWidth - calloutW - 2px).
+  const maxRx = chartWidth > 0 ? chartWidth - calloutW - 2 : Infinity;
+  const rx = Math.min(Math.max(cx - calloutW / 2, 2), maxRx);
   const ry = cy - pinHeight - calloutH;
   // medium anomalies use a slightly dimmed amber
   const color = severity === 'high' ? 'var(--anom)' : 'rgba(138,90,0,0.65)';
@@ -171,6 +176,20 @@ export function PriceChart({
 }: Props) {
   const setHoveredAnomaly = useRunStore((s) => s.setHoveredAnomaly);
   const hoveredAnomaly = useRunStore((s) => s.hoveredAnomaly);
+
+  // Measure chart container width to clamp anomaly pill right edge (Bug #5).
+  const chartWrapRef = useRef<HTMLDivElement>(null);
+  const [chartWidth, setChartWidth] = useState(0);
+  useEffect(() => {
+    const el = chartWrapRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setChartWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const pts = useMemo(() => toChartPoints(chartData.ohlcv), [chartData.ohlcv]);
 
@@ -253,7 +272,7 @@ export function PriceChart({
           </span>
         )}
       </div>
-      <div className="chart-wrap">
+      <div className="chart-wrap" ref={chartWrapRef}>
         <ResponsiveContainer width="100%" height={240}>
           <ComposedChart
             data={pts}
@@ -371,6 +390,7 @@ export function PriceChart({
                         onMouseLeave={handleLeave}
                         stackOffset={offset}
                         severity={anomaly.severity}
+                        chartWidth={chartWidth}
                       />
                     );
                   }}

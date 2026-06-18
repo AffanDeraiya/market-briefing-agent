@@ -316,6 +316,9 @@
     text-transform: none;
     letter-spacing: 0;
     /* Small caret arrow pointing up */
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .pop-portal::before {
@@ -979,6 +982,16 @@
     white-space: nowrap;
     /* Bug #6: constrain so long names (e.g. "NVIDIA Corporation · NasdaqGS")
        don't collide with the right edge of the input box. */
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+  }
+
+  .home .invalid {
+    font: 500 13px 'Inter';
+    color: var(--neg);
+    white-space: nowrap;
     max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
