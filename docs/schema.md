@@ -2,28 +2,45 @@
 
 Source of truth for: (1) agent loop & tool contracts, (2) SSE event protocol, (3) the MarketBrief output schema, (4) eval data shapes. Code mirrors this file; change this file first.
 
-## 1. Agent Loop (state machine)
+## 1. Agent Graph (LangGraph StateGraph)
+
+The agent is a LangGraph `StateGraph` (`agent.py`) of explicit nodes (`nodes.py`).
+Orchestration is the framework's; every node body is hand-written (the LLM↔tool
+loop, parsing, grounding, verification are all ours). State is a `GraphState`
+TypedDict carrying the existing `RunState` plus staged artifacts; the emitter,
+backend, and recorder travel in `config["configurable"]` (not serialized — no
+checkpointing). `run_agent(...)` emits `run_started`, invokes the compiled graph,
+and returns `RunResult(brief, error, usage)` — the public contract is unchanged.
 
 ```
-RECEIVE {ticker, period}
-  → validate ticker (guards)
-  → LOOP (≤ MAX_ITERATIONS):
-      llm.complete(system, history, tools)        # adapter normalizes Anthropic/OpenAI wire formats
-      ├─ response.wants_tools:
-      │     for each tool call:
-      │         emit tool_call → execute (≤10s) → emit tool_result
-      │         append tool_result to history
-      │     (tool budget exceeded? → inject "finalize now" user msg)
-      └─ response.is_final:
-            parse final text as MarketBrief
-            (grounding guard: drop any news/web citation whose URL was never
-             returned by a tool; repair the references — see below)
-            ├─ ok → emit brief, usage → DONE
-            └─ parse error → one repair round-trip → ok|FAIL
-  → any exception / run timeout → emit error → DONE
+START → validate_input ─▶ reason ─▶ parse_and_enrich ─▶ verify ─▶ emit_final ─▶ END
+              │                │              │
+              └▶ emit_error    │              ├▶ repair (≤1) ─▶ reason
+                               └▶ emit_error  └▶ emit_error
 ```
 
-Expected typical run: 8–14 tool calls, 5–9 iterations.
+- **validate_input** — normalize ticker + period; bad input → `emit_error`.
+- **reason** — the multi-step tool-use loop (≤ MAX_ITERATIONS), unchanged:
+  `llm.complete(system, history, tools)` (adapter normalizes Anthropic/OpenAI wire
+  formats); on `wants_tools` → for each call emit `tool_call` → execute (≤10s) →
+  emit `tool_result` → append to history (tool budget exceeded → inject "finalize
+  now"); on `is_final` → return `raw_final_text` (parsing happens next node). Any
+  exception / run timeout / provider 429 → `error` → `emit_error`.
+- **parse_and_enrich** — parse `raw_final_text` as MarketBrief + attach deterministic
+  market data. Grounding guard: drop any news/web citation whose URL was never
+  returned by a tool, and repair the references. Parse/validation error → `repair`
+  (once) → back to `reason`; second failure → `emit_error`.
+- **verify** — the Claim Verifier (§4). Deterministic layer always runs; the LLM
+  semantic layer runs live only (`config["configurable"]["verify_llm"]`, False in
+  replay). On the live path it emits the **composed** brief, streams
+  `verify_started`/`claim_verdict`/`verify_done`, mutates the brief (downgrade /
+  drop / neutralize), and `emit_final` emits the **revised** brief. Offline it is a
+  silent deterministic-only pass (single brief, no extra LLM call).
+- **emit_final** — compute usage, emit `brief` + `usage`. **emit_error** — map to a
+  client-safe message, emit `error` + `usage`.
+
+Expected typical run: 8–14 tool calls, 5–9 iterations. Only graph cycle is
+`repair → reason`, bounded to 1.
 
 ### Phase strategy (encoded in system prompt, not hardcoded)
 1. `get_price_history` + `get_fundamentals` — snapshot

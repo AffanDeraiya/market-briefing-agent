@@ -101,14 +101,15 @@ Opus owns the graph wiring, state schema, entrypoint, and verifier prompt; Sonne
 - [x] `schema.md` §3 (events) + §4 (Verification field + verifier behavior) updated
 - [x] **Gate held: 264 tests pass + eval 100%/100% (6/6)** + ruff/format/mypy strict clean (deterministic layer no-ops on clean cassettes)
 
-### Phase 2.5 — Frontend showcase (L2 live before→after) — NEXT
-- [ ] types: `Signal` already done; add `Verification`/`ClaimVerdict`; new SSE events in `sse.ts`/types + `runStore` reducers (handle 2nd `brief` as a revision; collect verdicts)
-- [ ] agent-log: a `verify` step (like compose) with a hover summary
-- [ ] brief diff animation: confidence chips transition, dropped claims fade/strike, signal hero updates; per-claim `✓ verified`/`⚠ adjusted` badges; a "Verification" summary panel
-- [ ] persist `verification` in recents; add to `mdExport`
-- [ ] frontend gate: lint/prettier/tsc/tests/build
+### Phase 2.5 — Frontend showcase (L2 live before→after)  ✅ COMPLETE (commit 36e4191)
+- [x] types: `Verification`/`ClaimVerdict` + verify SSE events in types + `runStore` reducers (2nd `brief` overwrites as the revision; verdicts collected)
+- [x] agent-log: a `verify` step (like compose) with a hover summary (checked/adjusted/dropped)
+- [x] `VerificationPanel` (section "08") + inline `VerdictBadge` on the anomaly + signal (bullets covered by the panel — index-based inline badges skipped to stay drop-safe)
+- [x] `verification` persists in recents (it rides on `brief`); added to `mdExport`
+- [x] demo fixture streams the full L2 sequence (composed → verify_started → verdicts → verify_done → revised brief)
+- [x] **frontend gate green: eslint + prettier + tsc strict + vitest (82) + build**; backend gate unchanged (264 + eval 100%/100%)
 
 ### Phase 3 — docs + ship
-- [ ] `CLAUDE.md`, `schema.md §1`, `techspec.md` updated
-- [ ] e2e + one live smoke on deploy
+- [x] `CLAUDE.md`, `techspec.md` updated (Phase 1); `schema.md §1` rewritten loop → graph state machine
+- [x] one live smoke (AAPL/3mo, OpenRouter gpt-oss-120b): full L2 streamed — composed brief → verify_started → 11 claim_verdict → verify_done (6 supported, 4 dropped) → revised brief → usage; no error, ~86s, revised brief re-validated
 - [ ] merge `feat/backend-langgraph-rework` → `working`
