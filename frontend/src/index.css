@@ -1003,23 +1003,6 @@
     }
   }
 
-  /* "Verified ✓" stamp in the run header (color via currentColor, like badges) */
-  .verified-stamp {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    flex-shrink: 0;
-    font: 600 10.5px 'JetBrains Mono';
-    letter-spacing: 0.02em;
-    color: var(--pos);
-    border: 1px solid currentColor;
-    background: transparent;
-    border-radius: 5px;
-    padding: 2px 7px;
-    opacity: 0.85;
-    white-space: nowrap;
-  }
-
   /* Skip control for the guided walkthrough */
   .wk-skip {
     position: fixed;

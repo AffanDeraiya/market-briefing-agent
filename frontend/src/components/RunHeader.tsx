@@ -243,15 +243,6 @@ export function RunHeader({
         </span>
       )}
       {!exchange && <span className="meta mono">{period}</span>}
-      {brief?.verification && (
-        <span
-          className="verified-stamp"
-          title="An independent Claim Verifier audited every cited claim and revised the brief."
-        >
-          ✓ Verified · {brief.verification.dropped} dropped ·{' '}
-          {brief.verification.adjusted} adjusted
-        </span>
-      )}
       <div className="spacer" />
       <div className="actions">
         <button

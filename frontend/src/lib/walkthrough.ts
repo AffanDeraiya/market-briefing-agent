@@ -35,10 +35,12 @@ export function describeTarget(target: string): {
   rank: number;
   index: number;
 } {
+  // Ranks follow on-page (DOM) order so the walk scrolls monotonically down:
+  // anomaly (02) → news (03) → bull/bear (04) → risks (05) → signal (07).
   if (target === 'signal')
     return { sectionId: 'sec-signal', label: 'Signal', rank: 5, index: 0 };
   if (target.startsWith('anomaly:'))
-    return { sectionId: 'sec-anomaly', label: 'Anomaly', rank: 4, index: 0 };
+    return { sectionId: 'sec-anomaly', label: 'Anomaly', rank: 0, index: 0 };
   const [section, idxStr] = target.split(':');
   const index = Number(idxStr ?? 0);
   const labelMap: Record<string, string> = {
@@ -54,10 +56,10 @@ export function describeTarget(target: string): {
     risks: 'sec-risks',
   };
   const rankMap: Record<string, number> = {
-    news_highlights: 0,
-    bull_case: 1,
-    bear_case: 2,
-    risks: 3,
+    news_highlights: 1,
+    bull_case: 2,
+    bear_case: 3,
+    risks: 4,
   };
   return {
     sectionId: sectionIdMap[section] ?? 'sec-news',
@@ -120,12 +122,33 @@ function prefersReducedMotion(): boolean {
   );
 }
 
+function maxScroll(): number {
+  return Math.max(
+    0,
+    document.documentElement.scrollHeight - window.innerHeight,
+  );
+}
+
+// Top-anchor the active section ~28% down the viewport, clamped so the viewport
+// bottom never passes the content bottom (which would show blank below the
+// sticky header).
 function scrollToSection(id: string): void {
-  if (typeof document === 'undefined') return;
-  document.getElementById(id)?.scrollIntoView({
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  const top =
+    window.scrollY + el.getBoundingClientRect().top - window.innerHeight * 0.28;
+  window.scrollTo({
+    top: Math.max(0, Math.min(top, maxScroll())),
     behavior: 'smooth',
-    block: 'center',
   });
+}
+
+// Pull the viewport back up if a collapsed line left it parked past the content.
+function clampScroll(): void {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+  const limit = maxScroll();
+  if (window.scrollY > limit) window.scrollTo({ top: limit, behavior: 'auto' });
 }
 
 // Timing (ms)
@@ -218,6 +241,9 @@ export function useVerifyWalkthrough(
           await backspace(step.fullText.length);
           if (cancelRef.current) return;
           await sleep(COLLAPSE_HOLD);
+          // The line just collapsed — recompute so the viewport isn't left over
+          // empty space below the now-shorter content.
+          clampScroll();
         } else {
           await sleep(RECAL_HOLD);
         }
@@ -229,6 +255,7 @@ export function useVerifyWalkthrough(
       if (!cancelRef.current) {
         setActive(false);
         setActiveTarget(null);
+        clampScroll();
       }
     };
 
