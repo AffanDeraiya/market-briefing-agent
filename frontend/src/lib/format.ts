@@ -161,6 +161,18 @@ export function mdExport(brief: MarketBrief): string {
           `_AI interpretation — not financial advice._\n`,
         ].join('\n')
       : '',
+    brief.verification
+      ? [
+          `## Verification\n`,
+          `_${brief.verification.checked} claims checked · ${brief.verification.supported} supported · ${brief.verification.adjusted} adjusted · ${brief.verification.dropped} dropped_\n`,
+          brief.verification.verdicts
+            .map(
+              (v) => `- **${v.label}** — ${v.verdict} / ${v.action}: ${v.note}`,
+            )
+            .join('\n'),
+          '\n',
+        ].join('\n')
+      : '',
     `## Sources\n\n${sourcesList}\n`,
     `---\n\n_${disclaimer}_`,
   ].join('\n');

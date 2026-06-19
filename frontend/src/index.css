@@ -801,6 +801,84 @@
     font-style: italic;
   }
 
+  /* ---- Verification panel (Section 08) ---- */
+  .verify-panel .verify-summary {
+    margin-bottom: 16px;
+  }
+
+  .verdict-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .verdict-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 9px 12px;
+    background: var(--raised);
+    border: 1px solid var(--bd);
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .verdict-dot {
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: 5px;
+    align-self: flex-start;
+  }
+
+  .verdict-label {
+    flex-shrink: 0;
+    font: 500 11.5px 'JetBrains Mono';
+    color: var(--tp);
+    min-width: 0;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .verdict-action {
+    flex-shrink: 0;
+    font: 600 11px 'JetBrains Mono';
+    letter-spacing: 0.03em;
+    background: var(--panel);
+    border: 1px solid var(--bd);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+
+  .verdict-note {
+    flex: 1;
+    font-size: 12.5px;
+    color: var(--ts);
+    min-width: 0;
+    line-height: 1.5;
+  }
+
+  /* Inline verdict badge — color is set inline; we only control shape + type */
+  .verdict-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font: 600 10.5px 'JetBrains Mono';
+    letter-spacing: 0.03em;
+    background: transparent;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    padding: 1px 6px;
+    opacity: 0.9;
+    vertical-align: middle;
+    margin-left: 6px;
+    line-height: 1.4;
+  }
+
   .bul {
     list-style: none;
     display: flex;

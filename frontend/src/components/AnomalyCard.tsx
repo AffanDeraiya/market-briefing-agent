@@ -1,13 +1,15 @@
 // Section 02 — Anomaly investigated.
-import type { Anomaly, Citation } from '../lib/types';
+import type { Anomaly, Citation, Verification } from '../lib/types';
 import { InlineCites } from './Citation';
 import { stripInlineCites } from '../lib/format';
 import { useRunStore } from '../store/runStore';
+import { VerdictBadge } from './VerdictBadge';
 
 interface Props {
   anomaly: Anomaly;
   sigma?: string;
   citations: Citation[];
+  verification?: Verification | null;
 }
 
 function ConfRow({ confidence }: { confidence: Anomaly['confidence'] }) {
@@ -33,7 +35,12 @@ function ConfRow({ confidence }: { confidence: Anomaly['confidence'] }) {
   );
 }
 
-export function AnomalyCard({ anomaly, sigma, citations }: Props) {
+export function AnomalyCard({
+  anomaly,
+  sigma,
+  citations,
+  verification,
+}: Props) {
   const hoveredAnomaly = useRunStore((s) => s.hoveredAnomaly);
   const setHoveredAnomaly = useRunStore((s) => s.setHoveredAnomaly);
   const isLinked = hoveredAnomaly === anomaly.date;
@@ -54,6 +61,10 @@ export function AnomalyCard({ anomaly, sigma, citations }: Props) {
           <InlineCites ids={anomaly.citations} citations={citations} />
         </p>
         <ConfRow confidence={anomaly.confidence} />
+        <VerdictBadge
+          target={`anomaly:${anomaly.date}`}
+          verification={verification}
+        />
       </div>
       <div className="flag">
         <div className="date mono">{anomaly.date}</div>
@@ -65,7 +76,11 @@ export function AnomalyCard({ anomaly, sigma, citations }: Props) {
 }
 
 interface SectionProps {
-  brief: { anomalies: Anomaly[]; citations: Citation[] };
+  brief: {
+    anomalies: Anomaly[];
+    citations: Citation[];
+    verification?: Verification | null;
+  };
   chartSigmas?: Record<string, string>;
 }
 
@@ -99,6 +114,7 @@ export function AnomalySection({ brief, chartSigmas }: SectionProps) {
             anomaly={a}
             sigma={chartSigmas?.[a.date]}
             citations={brief.citations}
+            verification={brief.verification}
           />
         ))}
       </div>

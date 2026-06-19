@@ -2,6 +2,23 @@
 
 export type Period = '1mo' | '3mo' | '6mo' | '1y';
 
+// Claim Verifier types
+export interface ClaimVerdict {
+  target: string;
+  label: string;
+  verdict: 'supported' | 'partial' | 'unsupported';
+  action: 'kept' | 'confidence_downgraded' | 'dropped' | 'neutralized';
+  note: string;
+}
+
+export interface Verification {
+  verdicts: ClaimVerdict[];
+  checked: number;
+  supported: number;
+  adjusted: number;
+  dropped: number;
+}
+
 export interface OHLCVPoint {
   date: string;
   open: number;
@@ -72,6 +89,25 @@ export interface UsagePayload {
   tool_calls: number;
   iterations: number;
   latency_ms: number;
+}
+
+export interface VerifyStartedPayload {
+  claims_total: number;
+}
+
+export interface ClaimVerdictPayload {
+  target: string;
+  label: string;
+  verdict: 'supported' | 'partial' | 'unsupported';
+  action: 'kept' | 'confidence_downgraded' | 'dropped' | 'neutralized';
+  note: string;
+}
+
+export interface VerifyDonePayload {
+  checked: number;
+  supported: number;
+  adjusted: number;
+  dropped: number;
 }
 
 export interface ErrorPayload {
@@ -148,6 +184,7 @@ export interface MarketBrief {
   signal?: Signal | null;
   citations: Citation[];
   disclaimer: string;
+  verification?: Verification | null;
 }
 
 // SSE event union
@@ -160,12 +197,15 @@ export type BriefEvent =
   | { event: 'anomaly_focus'; data: AnomalyFocusPayload }
   | { event: 'brief'; data: MarketBrief }
   | { event: 'usage'; data: UsagePayload }
-  | { event: 'error'; data: ErrorPayload };
+  | { event: 'error'; data: ErrorPayload }
+  | { event: 'verify_started'; data: VerifyStartedPayload }
+  | { event: 'claim_verdict'; data: ClaimVerdictPayload }
+  | { event: 'verify_done'; data: VerifyDonePayload };
 
 // Combined log step (what the store holds per strip entry)
 export interface LogStep {
   id: string; // unique
-  type: 'tool_call' | 'tool_result' | 'anomaly_focus' | 'step';
+  type: 'tool_call' | 'tool_result' | 'anomaly_focus' | 'step' | 'verify';
   // tool steps
   seq?: number;
   name?: string;
@@ -182,4 +222,6 @@ export interface LogStep {
   // thinking/compose
   iteration?: number;
   thinking?: string;
+  // verify step data
+  data?: Record<string, unknown>;
 }

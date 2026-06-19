@@ -342,6 +342,67 @@ function AnomalyStep({ step }: { step: LogStep }) {
   );
 }
 
+function VerifyStepCard({ step }: { step: LogStep }) {
+  const checked = Number(step.data?.checked ?? 0);
+  const adjusted = Number(step.data?.adjusted ?? 0);
+  const dropped = Number(step.data?.dropped ?? 0);
+  return (
+    <>
+      <div className="ph">
+        <span className="pn">claim verifier</span>
+        <span className="pstat ok">done</span>
+      </div>
+      <div className="pdesc">
+        An independent pass re-checked every cited claim against the retrieved
+        evidence and adjusted the brief where support was weak.
+      </div>
+      <div className="prow">
+        <span className="pk">checked</span>
+        <span className="pv">{checked}</span>
+      </div>
+      <div className="prow">
+        <span className="pk">adjusted</span>
+        <span className="pv">
+          {adjusted > 0 ? <span className="an">{adjusted}</span> : adjusted}
+        </span>
+      </div>
+      <div className="prow">
+        <span className="pk">dropped</span>
+        <span className="pv">
+          {dropped > 0 ? <span className="neg">{dropped}</span> : dropped}
+        </span>
+      </div>
+    </>
+  );
+}
+
+function VerifyStep({ step }: { step: LogStep }) {
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
+    useHover();
+  return (
+    <div
+      ref={ref}
+      className="st verify tl-item"
+      tabIndex={0}
+      aria-label="Claim verifier"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
+    >
+      <span className="shld" style={{ color: '#5a9ec9', fontSize: 11 }}>
+        ✓
+      </span>
+      <span className="nm" style={{ color: '#5a9ec9' }}>
+        verify
+      </span>
+      <PortalPop anchorRef={ref} visible={active} alignRight>
+        <VerifyStepCard step={step} />
+      </PortalPop>
+    </div>
+  );
+}
+
 function ComposeStep({ step }: { step: LogStep }) {
   const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
     useHover();
@@ -583,6 +644,9 @@ export function AgentLogStrip({ log, usage, status, model }: Props) {
             }
             if (step.type === 'step') {
               return <ComposeStep key={step.id} step={step} />;
+            }
+            if (step.type === 'verify') {
+              return <VerifyStep key={step.id} step={step} />;
             }
             return null;
           })}

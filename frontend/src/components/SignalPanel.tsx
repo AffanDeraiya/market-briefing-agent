@@ -2,6 +2,7 @@
 import type { Signal, MarketBrief } from '../lib/types';
 import { InlineCites } from './Citation';
 import { stripInlineCites } from '../lib/format';
+import { VerdictBadge } from './VerdictBadge';
 
 const STANCE_META: Record<Signal['stance'], { label: string; color: string }> =
   {
@@ -53,8 +54,12 @@ export function SignalPanelSection({ brief }: { brief: MarketBrief }) {
         id="signal-panel"
         style={{ borderLeftColor: color }}
       >
-        <div className="signal-verdict" style={{ color }}>
+        <div
+          className="signal-verdict"
+          style={{ color, display: 'flex', alignItems: 'center', gap: 10 }}
+        >
           {label}
+          <VerdictBadge target="signal" verification={brief.verification} />
         </div>
         <div className="conf-row" style={{ color }}>
           <span
