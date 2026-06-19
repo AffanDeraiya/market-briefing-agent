@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Any, Literal
+from typing import Any, Literal, TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.llm import Turn
+from src.schemas import MarketBrief  # runtime import: LangGraph introspects GraphState hints
 
 Period = Literal["1mo", "3mo", "6mo", "1y"]
 
@@ -108,3 +109,25 @@ class RunState(BaseModel):
         if self.timed_out():
             return "run timeout"
         return None
+
+
+# ---------------------------------------------------------------------------
+# LangGraph graph state
+# ---------------------------------------------------------------------------
+
+
+class GraphState(TypedDict):
+    """State threaded between LangGraph nodes (agent.py builds the StateGraph).
+
+    `run` is the existing mutable RunState workhorse (history, budgets, tool
+    outputs, seen_urls) — nodes mutate it in place. The other keys are staged
+    artifacts produced as the graph advances; nodes return partial updates.
+    """
+
+    run: RunState
+    raw_final_text: str | None  # the LLM's final composed text (set by `reason`)
+    brief: MarketBrief | None  # parsed + enriched (set by `parse_and_enrich`, mutated by `verify`)
+    error: tuple[str, str] | None  # (kind, message)
+    parse_error: str | None  # last parse failure text, consumed by `repair`
+    verification: dict[str, Any] | None  # Phase 2 verifier summary
+    usage: dict[str, Any] | None  # final usage dict (set by emit nodes)

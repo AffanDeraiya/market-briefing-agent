@@ -24,6 +24,9 @@ __all__ = [
     "EVENT_CHART_DATA",
     "EVENT_ANOMALY_FOCUS",
     "EVENT_BRIEF",
+    "EVENT_VERIFY_STARTED",
+    "EVENT_CLAIM_VERDICT",
+    "EVENT_VERIFY_DONE",
     "EVENT_USAGE",
     "EVENT_ERROR",
     "noop_emitter",
@@ -49,6 +52,10 @@ EVENT_TOOL_RESULT = "tool_result"
 EVENT_CHART_DATA = "chart_data"
 EVENT_ANOMALY_FOCUS = "anomaly_focus"
 EVENT_BRIEF = "brief"
+# Claim Verifier events (L2 live before→after revision)
+EVENT_VERIFY_STARTED = "verify_started"
+EVENT_CLAIM_VERDICT = "claim_verdict"
+EVENT_VERIFY_DONE = "verify_done"
 EVENT_USAGE = "usage"
 EVENT_ERROR = "error"
 

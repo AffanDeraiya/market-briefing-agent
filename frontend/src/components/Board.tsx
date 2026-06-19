@@ -15,6 +15,7 @@ import { BullBear } from './BullBear';
 import { Risks } from './Risks';
 import { Sources } from './Sources';
 import { SignalHero, SignalPanelSection } from './SignalPanel';
+import { VerificationPanel } from './VerificationPanel';
 
 interface Props {
   brief: MarketBrief | null;
@@ -227,6 +228,9 @@ export function Board({
 
       {/* Section 07 — Signal (optional conclusion) */}
       {brief?.signal && <SignalPanelSection brief={brief} />}
+
+      {/* Section 08 — Verification (optional, shown when verifier has run) */}
+      {brief?.verification && <VerificationPanel brief={brief} />}
 
       {/* Streaming hint */}
       {isStreaming && !brief && (

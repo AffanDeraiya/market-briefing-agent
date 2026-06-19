@@ -8,6 +8,7 @@ import type {
   UsagePayload,
   LogStep,
   Period,
+  ClaimVerdict,
 } from '../lib/types';
 import { DEMO_EVENTS, DEMO_BRIEF } from '../lib/demoFixture';
 import { streamBrief, BriefStreamError } from '../lib/sse';
@@ -85,6 +86,11 @@ export interface RunState {
   // For crosshair / anomaly linking
   hoveredAnomaly: string | null; // date string
 
+  // Claim verifier state
+  verifying: boolean;
+  verdicts: ClaimVerdict[];
+  claimsTotal: number;
+
   // Recent briefs (sessionStorage)
   recents: RecentBrief[];
 
@@ -119,6 +125,9 @@ export const useRunStore = create<RunState>((set, get) => ({
   brief: null,
   usage: null,
   hoveredAnomaly: null,
+  verifying: false,
+  verdicts: [],
+  claimsTotal: 0,
   recents: loadRecents(),
 
   setTicker: (ticker) => set({ ticker }),
@@ -140,6 +149,9 @@ export const useRunStore = create<RunState>((set, get) => ({
       hoveredAnomaly: null,
       name: '',
       model: '',
+      verifying: false,
+      verdicts: [],
+      claimsTotal: 0,
     });
   },
 
@@ -286,6 +298,32 @@ export const useRunStore = create<RunState>((set, get) => ({
           set({ status: 'error', error: ev.data.message });
         }
         break;
+
+      case 'verify_started':
+        set({
+          verifying: true,
+          claimsTotal: ev.data.claims_total,
+          verdicts: [],
+        });
+        break;
+
+      case 'claim_verdict':
+        set({ verdicts: [...get().verdicts, ev.data] });
+        break;
+
+      case 'verify_done': {
+        const verifyStep: LogStep = {
+          id: `verify-${Date.now()}`,
+          type: 'verify',
+          data: {
+            checked: ev.data.checked,
+            adjusted: ev.data.adjusted,
+            dropped: ev.data.dropped,
+          },
+        };
+        set({ verifying: false, log: [...get().log, verifyStep] });
+        break;
+      }
     }
   },
 
@@ -304,6 +342,9 @@ export const useRunStore = create<RunState>((set, get) => ({
       usage: null,
       error: null,
       hoveredAnomaly: null,
+      verifying: false,
+      verdicts: [],
+      claimsTotal: 0,
     });
 
     // Immediately apply run_started (first event)
@@ -320,6 +361,9 @@ export const useRunStore = create<RunState>((set, get) => ({
       else if (ev.event === 'anomaly_focus') acc += 400;
       else if (ev.event === 'step') acc += 300;
       else if (ev.event === 'brief') acc += 500;
+      else if (ev.event === 'verify_started') acc += 300;
+      else if (ev.event === 'claim_verdict') acc += 250;
+      else if (ev.event === 'verify_done') acc += 300;
       else if (ev.event === 'usage') acc += 120;
       else acc += 150;
       delays.push(acc);
@@ -356,6 +400,9 @@ export const useRunStore = create<RunState>((set, get) => ({
       error: null,
       retryAfterS: null,
       hoveredAnomaly: null,
+      verifying: false,
+      verdicts: [],
+      claimsTotal: 0,
     });
 
     const doStream = (isRetry: boolean): Promise<void> =>

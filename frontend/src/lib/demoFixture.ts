@@ -318,6 +318,48 @@ export const DEMO_BRIEF: MarketBrief = {
   disclaimer: DISCLAIMER,
 };
 
+// Verified brief — structurally identical to DEMO_BRIEF but with mutations applied
+// after the Claim Verifier pass: anomaly confidence downgraded, signal confidence
+// downgraded, and a verification object attached.
+export const DEMO_BRIEF_VERIFIED: MarketBrief = {
+  ...DEMO_BRIEF,
+  anomalies: DEMO_BRIEF.anomalies.map((a) =>
+    a.date === '2026-06-09' ? { ...a, confidence: 'medium' as const } : a,
+  ),
+  signal: DEMO_BRIEF.signal
+    ? { ...DEMO_BRIEF.signal, confidence: 'low' as const }
+    : DEMO_BRIEF.signal,
+  verification: {
+    verdicts: [
+      {
+        target: 'bull_case:0',
+        label: 'Analysts broadly raising targets…',
+        verdict: 'supported',
+        action: 'kept',
+        note: 'Directly backed by the cited MacRumors report.',
+      },
+      {
+        target: 'anomaly:2026-06-09',
+        label: '2026-06-09 price_drop: −3.6%',
+        verdict: 'partial',
+        action: 'confidence_downgraded',
+        note: 'Evidence links the drop to WWDC sentiment but the magnitude attribution is indirect.',
+      },
+      {
+        target: 'signal',
+        label: 'signal(accumulate)…',
+        verdict: 'partial',
+        action: 'confidence_downgraded',
+        note: 'Constructive but the bull/bear evidence is mixed; conviction lowered.',
+      },
+    ],
+    checked: 3,
+    supported: 1,
+    adjusted: 2,
+    dropped: 0,
+  },
+};
+
 // Tool descriptions — surfaced in log hover cards
 export const TOOL_DESCRIPTIONS: Record<string, string> = {
   get_price_history:
@@ -473,6 +515,48 @@ export const DEMO_EVENTS: BriefEvent[] = [
   {
     event: 'brief',
     data: DEMO_BRIEF,
+  },
+  {
+    event: 'verify_started',
+    data: { claims_total: 12 },
+  },
+  {
+    event: 'claim_verdict',
+    data: {
+      target: 'bull_case:0',
+      label: 'Analysts broadly raising targets…',
+      verdict: 'supported',
+      action: 'kept',
+      note: 'Directly backed by the cited MacRumors report.',
+    },
+  },
+  {
+    event: 'claim_verdict',
+    data: {
+      target: 'anomaly:2026-06-09',
+      label: '2026-06-09 price_drop: −3.6%',
+      verdict: 'partial',
+      action: 'confidence_downgraded',
+      note: 'Evidence links the drop to WWDC sentiment but the magnitude attribution is indirect.',
+    },
+  },
+  {
+    event: 'claim_verdict',
+    data: {
+      target: 'signal',
+      label: 'signal(accumulate)…',
+      verdict: 'partial',
+      action: 'confidence_downgraded',
+      note: 'Constructive but the bull/bear evidence is mixed; conviction lowered.',
+    },
+  },
+  {
+    event: 'verify_done',
+    data: { checked: 3, supported: 1, adjusted: 2, dropped: 0 },
+  },
+  {
+    event: 'brief',
+    data: DEMO_BRIEF_VERIFIED,
   },
   {
     event: 'usage',

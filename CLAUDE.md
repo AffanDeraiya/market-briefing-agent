@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project State
 
-**Market Briefing Agent** — a web app where a user enters a stock ticker and a single hand-rolled LLM agent produces a cited, structured market brief, streaming its reasoning live to a React timeline. The differentiator: deterministic anomaly detection (price spikes, volume surges, gaps) followed by autonomous, date-scoped investigation of each anomaly.
+**Market Briefing Agent** — a web app where a user enters a stock ticker and a single LangGraph agent produces a cited, structured market brief, streaming its reasoning live to a React timeline. The differentiator: deterministic anomaly detection (price spikes, volume surges, gaps) followed by autonomous, date-scoped investigation of each anomaly, then an independent Claim Verifier pass. The agent is a `StateGraph` (`agent.py`) of explicit nodes (`nodes.py`): validate → reason (multi-step tool-use) → parse/enrich → verify → emit; node bodies are hand-written (the LLM↔tool loop, tools, provider adapter, parser, grounding are all ours — LangGraph is only the orchestration layer).
 
 The project is **fully planned but not yet built**. `docs/` is the complete spec and the **source of truth** — read `docs/00_START_HERE.md` first, then follow its reading order. Build proceeds phase-by-phase per `docs/implementation_plan.md` (currently: Phase 0, scaffold). Do not start later phases early. If a doc seems wrong, flag it and propose a doc change rather than silently diverging; behavior changes update `schema.md`/`techspec.md` in the same commit.
 
@@ -24,7 +24,8 @@ The project is **fully planned but not yet built**. `docs/` is the complete spec
 React SPA ──POST /api/brief──▶ FastAPI (slowapi per-IP + global daily cap)
                 │ SSE stream of agent events
                 ▼
-   Agent loop (hand-rolled, NO framework — interview explainability is the point)
+   LangGraph StateGraph (agent.py) — nodes in nodes.py, hand-written bodies:
+   validate_input → reason (multi-step tool-use loop) → parse_and_enrich → verify → emit
        │ llm.complete(...)                    │ tool registry
        ▼                                      ▼
    src/llm.py provider adapter            Tool layer (7 tools, Pydantic I/O)
