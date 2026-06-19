@@ -1,18 +1,16 @@
 // Section 05 — Key risks.
 import type { MarketBrief } from '../lib/types';
-import type { RevisionView } from '../lib/revision';
-import { revClass } from '../lib/revision';
-import { InlineCites } from './Citation';
-import { stripInlineCites } from '../lib/format';
+import type { Walkthrough } from '../lib/walkthrough';
+import { WalkBullet } from './WalkBullet';
 
 interface Props {
   brief: MarketBrief;
-  revision?: RevisionView;
+  walk?: Walkthrough;
 }
 
-export function Risks({ brief, revision }: Props) {
+export function Risks({ brief, walk }: Props) {
   return (
-    <div className="doc-sec tl-item">
+    <div className="doc-sec tl-item" id="sec-risks">
       <div className="sec-head">
         <span className="ix">05</span>
         <h2>Key risks</h2>
@@ -20,12 +18,13 @@ export function Risks({ brief, revision }: Props) {
       </div>
       <ul className="bul">
         {brief.risks.map((b, i) => (
-          <li key={i} className={revClass(revision, `risks:${i}`).trim()}>
-            <span>
-              {stripInlineCites(b.text)}
-              <InlineCites ids={b.citations} citations={brief.citations} />
-            </span>
-          </li>
+          <WalkBullet
+            key={i}
+            bullet={b}
+            citations={brief.citations}
+            target={`risks:${i}`}
+            walk={walk}
+          />
         ))}
       </ul>
     </div>

@@ -1,17 +1,15 @@
 // Section 02 — Anomaly investigated.
-import type { Anomaly, Citation, Verification } from '../lib/types';
-import type { RevisionView } from '../lib/revision';
+import type { Anomaly, Citation } from '../lib/types';
+import type { Walkthrough } from '../lib/walkthrough';
 import { InlineCites } from './Citation';
 import { stripInlineCites } from '../lib/format';
 import { useRunStore } from '../store/runStore';
-import { VerdictBadge } from './VerdictBadge';
 
-interface Props {
+interface CardProps {
   anomaly: Anomaly;
   sigma?: string;
   citations: Citation[];
-  verification?: Verification | null;
-  revision?: RevisionView;
+  active?: boolean;
 }
 
 function ConfRow({
@@ -46,13 +44,7 @@ function ConfRow({
   );
 }
 
-export function AnomalyCard({
-  anomaly,
-  sigma,
-  citations,
-  verification,
-  revision,
-}: Props) {
+export function AnomalyCard({ anomaly, sigma, citations, active }: CardProps) {
   const hoveredAnomaly = useRunStore((s) => s.hoveredAnomaly);
   const setHoveredAnomaly = useRunStore((s) => s.setHoveredAnomaly);
   const isLinked = hoveredAnomaly === anomaly.date;
@@ -62,7 +54,7 @@ export function AnomalyCard({
 
   return (
     <div
-      className={`anom-panel${isLinked ? ' linked' : ''}`}
+      className={`anom-panel${isLinked ? ' linked' : ''}${active ? ' wk-active' : ''}`}
       id={`anomPanel-${anomaly.date}`}
       onMouseEnter={() => setHoveredAnomaly(anomaly.date)}
       onMouseLeave={() => setHoveredAnomaly(null)}
@@ -72,14 +64,7 @@ export function AnomalyCard({
           {stripInlineCites(anomaly.explanation)}
           <InlineCites ids={anomaly.citations} citations={citations} />
         </p>
-        <ConfRow
-          confidence={anomaly.confidence}
-          pulse={revision?.changed.has(`anomaly:${anomaly.date}`)}
-        />
-        <VerdictBadge
-          target={`anomaly:${anomaly.date}`}
-          verification={verification}
-        />
+        <ConfRow confidence={anomaly.confidence} pulse={active} />
       </div>
       <div className="flag">
         <div className="date mono">{anomaly.date}</div>
@@ -94,16 +79,23 @@ interface SectionProps {
   brief: {
     anomalies: Anomaly[];
     citations: Citation[];
-    verification?: Verification | null;
   };
+  /** Revised anomalies, used to morph an item to its post-verification value
+   *  once the walkthrough reaches it. */
+  revised?: { anomalies: Anomaly[] };
   chartSigmas?: Record<string, string>;
-  revision?: RevisionView;
+  walk?: Walkthrough;
 }
 
-export function AnomalySection({ brief, chartSigmas, revision }: SectionProps) {
+export function AnomalySection({
+  brief,
+  revised,
+  chartSigmas,
+  walk,
+}: SectionProps) {
   if (brief.anomalies.length === 0) {
     return (
-      <div className="doc-sec tl-item">
+      <div className="doc-sec tl-item" id="sec-anomaly">
         <div className="sec-head">
           <span className="ix">02</span>
           <h2>Anomaly investigated</h2>
@@ -117,23 +109,32 @@ export function AnomalySection({ brief, chartSigmas, revision }: SectionProps) {
   }
 
   return (
-    <div className="doc-sec tl-item">
+    <div className="doc-sec tl-item" id="sec-anomaly">
       <div className="sec-head">
         <span className="ix">02</span>
         <h2>Anomaly investigated</h2>
         <span className="rule" />
       </div>
       <div className="anom-list">
-        {brief.anomalies.map((a) => (
-          <AnomalyCard
-            key={a.date}
-            anomaly={a}
-            sigma={chartSigmas?.[a.date]}
-            citations={brief.citations}
-            verification={brief.verification}
-            revision={revision}
-          />
-        ))}
+        {brief.anomalies.map((a) => {
+          const state = walk?.itemState(`anomaly:${a.date}`) ?? 'idle';
+          // Show the composed value until the walk reaches it, then morph to the
+          // revised one (and keep it once done).
+          const useRevised = state === 'active' || state === 'done';
+          const shown =
+            useRevised && revised
+              ? (revised.anomalies.find((x) => x.date === a.date) ?? a)
+              : a;
+          return (
+            <AnomalyCard
+              key={a.date}
+              anomaly={shown}
+              sigma={chartSigmas?.[a.date]}
+              citations={brief.citations}
+              active={state === 'active'}
+            />
+          );
+        })}
       </div>
     </div>
   );

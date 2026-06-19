@@ -1,18 +1,16 @@
 // Section 04 — Bull & bear (two-column layout).
 import type { MarketBrief } from '../lib/types';
-import type { RevisionView } from '../lib/revision';
-import { revClass } from '../lib/revision';
-import { InlineCites } from './Citation';
-import { stripInlineCites } from '../lib/format';
+import type { Walkthrough } from '../lib/walkthrough';
+import { WalkBullet } from './WalkBullet';
 
 interface Props {
   brief: MarketBrief;
-  revision?: RevisionView;
+  walk?: Walkthrough;
 }
 
-export function BullBear({ brief, revision }: Props) {
+export function BullBear({ brief, walk }: Props) {
   return (
-    <div className="doc-sec tl-item">
+    <div className="doc-sec tl-item" id="sec-bullbear">
       <div className="sec-head">
         <span className="ix">04</span>
         <h2>Bull &amp; bear</h2>
@@ -23,15 +21,13 @@ export function BullBear({ brief, revision }: Props) {
           <div className="col-head">Bull case</div>
           <ul className="bul">
             {brief.bull_case.map((b, i) => (
-              <li
+              <WalkBullet
                 key={i}
-                className={revClass(revision, `bull_case:${i}`).trim()}
-              >
-                <span>
-                  {stripInlineCites(b.text)}
-                  <InlineCites ids={b.citations} citations={brief.citations} />
-                </span>
-              </li>
+                bullet={b}
+                citations={brief.citations}
+                target={`bull_case:${i}`}
+                walk={walk}
+              />
             ))}
           </ul>
         </div>
@@ -39,15 +35,13 @@ export function BullBear({ brief, revision }: Props) {
           <div className="col-head">Bear case</div>
           <ul className="bul">
             {brief.bear_case.map((b, i) => (
-              <li
+              <WalkBullet
                 key={i}
-                className={revClass(revision, `bear_case:${i}`).trim()}
-              >
-                <span>
-                  {stripInlineCites(b.text)}
-                  <InlineCites ids={b.citations} citations={brief.citations} />
-                </span>
-              </li>
+                bullet={b}
+                citations={brief.citations}
+                target={`bear_case:${i}`}
+                walk={walk}
+              />
             ))}
           </ul>
         </div>

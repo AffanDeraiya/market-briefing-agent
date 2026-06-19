@@ -326,6 +326,8 @@ export const DEMO_BRIEF_VERIFIED: MarketBrief = {
   anomalies: DEMO_BRIEF.anomalies.map((a) =>
     a.date === '2026-06-09' ? { ...a, confidence: 'medium' as const } : a,
   ),
+  // risks[2] is dropped by the verifier — the walkthrough backspaces it out.
+  risks: DEMO_BRIEF.risks.slice(0, 2),
   signal: DEMO_BRIEF.signal
     ? { ...DEMO_BRIEF.signal, confidence: 'low' as const }
     : DEMO_BRIEF.signal,
@@ -337,6 +339,13 @@ export const DEMO_BRIEF_VERIFIED: MarketBrief = {
         verdict: 'supported',
         action: 'kept',
         note: 'Directly backed by the cited MacRumors report.',
+      },
+      {
+        target: 'risks:2',
+        label: 'Performance may hinge on AI adoption…',
+        verdict: 'unsupported',
+        action: 'dropped',
+        note: 'No retrieved source establishes this risk — removed for grounding.',
       },
       {
         target: 'anomaly:2026-06-09',
@@ -353,10 +362,10 @@ export const DEMO_BRIEF_VERIFIED: MarketBrief = {
         note: 'Constructive but the bull/bear evidence is mixed; conviction lowered.',
       },
     ],
-    checked: 3,
+    checked: 4,
     supported: 1,
     adjusted: 2,
-    dropped: 0,
+    dropped: 1,
   },
 };
 
@@ -533,6 +542,16 @@ export const DEMO_EVENTS: BriefEvent[] = [
   {
     event: 'claim_verdict',
     data: {
+      target: 'risks:2',
+      label: 'Performance may hinge on AI adoption…',
+      verdict: 'unsupported',
+      action: 'dropped',
+      note: 'No retrieved source establishes this risk — removed for grounding.',
+    },
+  },
+  {
+    event: 'claim_verdict',
+    data: {
       target: 'anomaly:2026-06-09',
       label: '2026-06-09 price_drop: −3.6%',
       verdict: 'partial',
@@ -552,7 +571,7 @@ export const DEMO_EVENTS: BriefEvent[] = [
   },
   {
     event: 'verify_done',
-    data: { checked: 3, supported: 1, adjusted: 2, dropped: 0 },
+    data: { checked: 4, supported: 1, adjusted: 2, dropped: 1 },
   },
   {
     event: 'brief',

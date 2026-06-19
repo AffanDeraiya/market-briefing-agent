@@ -1,9 +1,8 @@
 // Section 07 — Signal (optional buy/sell stance).
 import type { Signal, MarketBrief } from '../lib/types';
-import type { RevisionView } from '../lib/revision';
+import type { Walkthrough } from '../lib/walkthrough';
 import { InlineCites } from './Citation';
 import { stripInlineCites } from '../lib/format';
-import { VerdictBadge } from './VerdictBadge';
 
 const STANCE_META: Record<Signal['stance'], { label: string; color: string }> =
   {
@@ -39,38 +38,40 @@ export function SignalHero({ signal }: { signal: Signal }) {
 
 export function SignalPanelSection({
   brief,
-  revision,
+  revised,
+  walk,
 }: {
   brief: MarketBrief;
-  revision?: RevisionView;
+  revised?: MarketBrief;
+  walk?: Walkthrough;
 }) {
-  const { signal, citations } = brief;
+  const state = walk?.itemState('signal') ?? 'idle';
+  // Show the composed signal until the walk reaches it, then morph to revised.
+  const useRevised = state === 'active' || state === 'done';
+  const signal = useRevised && revised?.signal ? revised.signal : brief.signal;
+  const citations = brief.citations;
   if (!signal) return null;
 
   const { label, color } = STANCE_META[signal.stance];
-  const pulse = revision?.changed.has('signal') ?? false;
+  const isActive = state === 'active';
 
   return (
-    <div className="doc-sec tl-item">
+    <div className="doc-sec tl-item" id="sec-signal">
       <div className="sec-head">
         <span className="ix">07</span>
         <h2>Signal</h2>
         <span className="rule" />
       </div>
       <div
-        className="signal-panel"
+        className={`signal-panel${isActive ? ' wk-active' : ''}`}
         id="signal-panel"
         style={{ borderLeftColor: color }}
       >
-        <div
-          className="signal-verdict"
-          style={{ color, display: 'flex', alignItems: 'center', gap: 10 }}
-        >
+        <div className="signal-verdict" style={{ color }}>
           {label}
-          <VerdictBadge target="signal" verification={brief.verification} />
         </div>
         <div
-          className={`conf-row${pulse ? ' pulse-change' : ''}`}
+          className={`conf-row${isActive ? ' pulse-change' : ''}`}
           style={{ color }}
         >
           <span

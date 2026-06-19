@@ -14,7 +14,6 @@ const GITHUB_URL = 'https://github.com/AffanDeraiya/market-briefing-agent';
 export function App() {
   const status = useRunStore((s) => s.status);
   const ticker = useRunStore((s) => s.ticker);
-  const name = useRunStore((s) => s.name);
   const period = useRunStore((s) => s.period);
   const model = useRunStore((s) => s.model);
   const log = useRunStore((s) => s.log);
@@ -85,7 +84,6 @@ export function App() {
       {/* Sticky run header */}
       <RunHeader
         ticker={ticker || 'AAPL'}
-        name={name || 'Apple Inc.'}
         period={period}
         status={status}
         brief={brief}

@@ -7,7 +7,6 @@ import { mdExport } from '../lib/format';
 
 interface Props {
   ticker: string;
-  name: string;
   exchange?: string;
   period: string;
   status: RunStatus;
@@ -143,7 +142,6 @@ function StatusPill({
 
 export function RunHeader({
   ticker,
-  name,
   exchange,
   period,
   status,
@@ -239,7 +237,6 @@ export function RunHeader({
         </button>
       )}
       <span className="tkr mono">{ticker}</span>
-      <span className="co">{name}</span>
       {exchange && (
         <span className="meta mono">
           {exchange} · {period}
