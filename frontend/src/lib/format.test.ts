@@ -11,7 +11,8 @@ describe('currencySymbol', () => {
   it('returns HK$ for HKD', () => expect(currencySymbol('HKD')).toBe('HK$'));
   it('returns ¥ for CNY', () => expect(currencySymbol('CNY')).toBe('¥'));
   it('returns $ for null', () => expect(currencySymbol(null)).toBe('$'));
-  it('returns $ for undefined', () => expect(currencySymbol(undefined)).toBe('$'));
+  it('returns $ for undefined', () =>
+    expect(currencySymbol(undefined)).toBe('$'));
   it('returns code + space for unrecognised code', () =>
     expect(currencySymbol('BRL')).toBe('BRL '));
 });
@@ -19,10 +20,8 @@ describe('currencySymbol', () => {
 describe('fmtCap', () => {
   it('formats trillions', () =>
     expect(fmtCap(4_280_000_000_000)).toBe('$4.28T'));
-  it('formats billions', () =>
-    expect(fmtCap(38_000_000_000)).toBe('$38.0B'));
-  it('formats millions', () =>
-    expect(fmtCap(500_000_000)).toBe('$500.0M'));
+  it('formats billions', () => expect(fmtCap(38_000_000_000)).toBe('$38.0B'));
+  it('formats millions', () => expect(fmtCap(500_000_000)).toBe('$500.0M'));
   it('uses custom symbol', () =>
     expect(fmtCap(4_280_000_000_000, '₹')).toBe('₹4.28T'));
   it('returns N/A for null', () => expect(fmtCap(null)).toBe('N/A'));
@@ -51,4 +50,14 @@ describe('stripInlineCites', () => {
     ));
   it('strips empty parens left after cite removal', () =>
     expect(stripInlineCites('foo ()')).toBe('foo'));
+  it('strips a bare cite token with no brackets', () =>
+    expect(stripInlineCites('Volume trend is rising. c3')).toBe(
+      'Volume trend is rising.',
+    ));
+  it('strips a bracketed cite token', () =>
+    expect(stripInlineCites('Volume trend is rising. [c1]')).toBe(
+      'Volume trend is rising.',
+    ));
+  it('strips a bare cite next to a bracketed one', () =>
+    expect(stripInlineCites('rising. c3 [c1]')).toBe('rising.'));
 });

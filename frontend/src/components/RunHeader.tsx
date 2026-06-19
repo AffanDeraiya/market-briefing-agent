@@ -20,17 +20,19 @@ interface Props {
 function StatusPill({
   status,
   latencyS,
+  verifying,
   onStop,
 }: {
   status: RunStatus;
   latencyS?: number;
+  verifying?: boolean;
   onStop?: () => void;
 }) {
   if (status === 'streaming') {
     return (
       <span className="pill running">
         <span className="dot" aria-hidden="true" />
-        Researching…
+        {verifying ? 'Verifying…' : 'Researching…'}
         {onStop && (
           <button
             onClick={onStop}
@@ -151,6 +153,7 @@ export function RunHeader({
   onBack,
 }: Props) {
   const stopRun = useRunStore((s) => s.stopRun);
+  const verifying = useRunStore((s) => s.verifying);
   const [copied, setCopied] = useState(false);
 
   const handleCopyMd = async () => {
@@ -207,16 +210,31 @@ export function RunHeader({
             transition: 'border-color 0.15s, color 0.15s',
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)';
-            (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)';
+            (e.currentTarget as HTMLButtonElement).style.borderColor =
+              'var(--accent)';
+            (e.currentTarget as HTMLButtonElement).style.color =
+              'var(--accent)';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--bd)';
+            (e.currentTarget as HTMLButtonElement).style.borderColor =
+              'var(--bd)';
             (e.currentTarget as HTMLButtonElement).style.color = 'var(--ts)';
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-            <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 14 14"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M9 2L4 7L9 12"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
       )}
@@ -228,6 +246,15 @@ export function RunHeader({
         </span>
       )}
       {!exchange && <span className="meta mono">{period}</span>}
+      {brief?.verification && (
+        <span
+          className="verified-stamp"
+          title="An independent Claim Verifier audited every cited claim and revised the brief."
+        >
+          ✓ Verified · {brief.verification.dropped} dropped ·{' '}
+          {brief.verification.adjusted} adjusted
+        </span>
+      )}
       <div className="spacer" />
       <div className="actions">
         <button
@@ -248,6 +275,7 @@ export function RunHeader({
       <StatusPill
         status={status}
         latencyS={latencyS}
+        verifying={verifying}
         onStop={onStop ?? (() => stopRun())}
       />
     </div>

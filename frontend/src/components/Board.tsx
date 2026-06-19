@@ -1,9 +1,12 @@
-// Board — assembles chart, snapshot, range bar, then brief sections 01–06.
+// Board — assembles chart, snapshot, range bar, then brief sections 01–08.
 // Shows skeleton shimmer for each section until its data is ready.
+// During the verifier revision it renders the composed brief for one animation
+// frame (dropped claims fading out) before swapping to the revised brief.
 
 import { useEffect, useRef } from 'react';
 import type { MarketBrief, ChartDataPayload } from '../lib/types';
 import { currencySymbol } from '../lib/format';
+import { useBriefRevision } from '../lib/revision';
 import { SkeletonVeil } from './Skeleton';
 import { PriceChart } from './PriceChart';
 import { SnapshotBar } from './SnapshotBar';
@@ -19,6 +22,7 @@ import { VerificationPanel } from './VerificationPanel';
 
 interface Props {
   brief: MarketBrief | null;
+  composedBrief: MarketBrief | null;
   chartData: ChartDataPayload | null;
   ticker: string;
   period: string;
@@ -83,13 +87,20 @@ function SectionWrapper({
 
 export function Board({
   brief,
+  composedBrief,
   chartData,
   ticker,
   period,
   isStreaming,
 }: Props) {
   const sigmas = buildSigmaMap();
-  const sym = brief ? currencySymbol(brief.snapshot.currency) : '$';
+  // During the verify revision, `displayBrief` is the composed brief for one
+  // animation frame, then the revised brief; `revision` flags which claims are
+  // leaving (dropped) or pulsing (downgraded/neutralized).
+  const { displayBrief, revision } = useBriefRevision(composedBrief, brief);
+  const sym = displayBrief
+    ? currencySymbol(displayBrief.snapshot.currency)
+    : '$';
 
   return (
     <div className="board">
@@ -113,13 +124,13 @@ export function Board({
 
       {/* Snapshot bar */}
       <SectionWrapper
-        ready={!!brief}
+        ready={!!displayBrief}
         isStreaming={isStreaming}
         minHeight={60}
         delay={80}
       >
-        {brief ? (
-          <SnapshotBar snapshot={brief.snapshot} period={period} />
+        {displayBrief ? (
+          <SnapshotBar snapshot={displayBrief.snapshot} period={period} />
         ) : (
           <div className="snapbar" style={{ minHeight: 60 }} />
         )}
@@ -127,30 +138,30 @@ export function Board({
 
       {/* 52-week range bar */}
       <SectionWrapper
-        ready={!!brief}
+        ready={!!displayBrief}
         isStreaming={isStreaming}
         minHeight={70}
         delay={120}
       >
-        {brief ? (
-          <RangeBar snapshot={brief.snapshot} />
+        {displayBrief ? (
+          <RangeBar snapshot={displayBrief.snapshot} />
         ) : (
           <div style={{ minHeight: 70 }} />
         )}
       </SectionWrapper>
 
       {/* Signal hero — compact stance pill placed before Section 01 */}
-      {brief?.signal && <SignalHero signal={brief.signal} />}
+      {displayBrief?.signal && <SignalHero signal={displayBrief.signal} />}
 
       {/* Section 01 — Technical read */}
       <SectionWrapper
-        ready={!!brief}
+        ready={!!displayBrief}
         isStreaming={isStreaming}
         minHeight={80}
         delay={160}
       >
-        {brief ? (
-          <TechnicalRead brief={brief} />
+        {displayBrief ? (
+          <TechnicalRead brief={displayBrief} />
         ) : (
           <div className="doc-sec" style={{ minHeight: 80 }} />
         )}
@@ -158,13 +169,17 @@ export function Board({
 
       {/* Section 02 — Anomaly investigated */}
       <SectionWrapper
-        ready={!!brief}
+        ready={!!displayBrief}
         isStreaming={isStreaming}
         minHeight={80}
         delay={200}
       >
-        {brief ? (
-          <AnomalySection brief={brief} chartSigmas={sigmas} />
+        {displayBrief ? (
+          <AnomalySection
+            brief={displayBrief}
+            chartSigmas={sigmas}
+            revision={revision}
+          />
         ) : (
           <div className="doc-sec" style={{ minHeight: 80 }} />
         )}
@@ -172,13 +187,13 @@ export function Board({
 
       {/* Section 03 — News */}
       <SectionWrapper
-        ready={!!brief}
+        ready={!!displayBrief}
         isStreaming={isStreaming}
         minHeight={80}
         delay={240}
       >
-        {brief ? (
-          <NewsList brief={brief} />
+        {displayBrief ? (
+          <NewsList brief={displayBrief} revision={revision} />
         ) : (
           <div className="doc-sec" style={{ minHeight: 80 }} />
         )}
@@ -186,13 +201,13 @@ export function Board({
 
       {/* Section 04 — Bull & bear */}
       <SectionWrapper
-        ready={!!brief}
+        ready={!!displayBrief}
         isStreaming={isStreaming}
         minHeight={80}
         delay={280}
       >
-        {brief ? (
-          <BullBear brief={brief} />
+        {displayBrief ? (
+          <BullBear brief={displayBrief} revision={revision} />
         ) : (
           <div className="doc-sec" style={{ minHeight: 80 }} />
         )}
@@ -200,13 +215,13 @@ export function Board({
 
       {/* Section 05 — Risks */}
       <SectionWrapper
-        ready={!!brief}
+        ready={!!displayBrief}
         isStreaming={isStreaming}
         minHeight={80}
         delay={320}
       >
-        {brief ? (
-          <Risks brief={brief} />
+        {displayBrief ? (
+          <Risks brief={displayBrief} revision={revision} />
         ) : (
           <div className="doc-sec" style={{ minHeight: 80 }} />
         )}
@@ -214,26 +229,33 @@ export function Board({
 
       {/* Section 06 — Sources */}
       <SectionWrapper
-        ready={!!brief}
+        ready={!!displayBrief}
         isStreaming={isStreaming}
         minHeight={80}
         delay={360}
       >
-        {brief ? (
-          <Sources brief={brief} />
+        {displayBrief ? (
+          <Sources brief={displayBrief} />
         ) : (
           <div className="doc-sec" style={{ minHeight: 80 }} />
         )}
       </SectionWrapper>
 
       {/* Section 07 — Signal (optional conclusion) */}
-      {brief?.signal && <SignalPanelSection brief={brief} />}
+      {displayBrief?.signal && (
+        <SignalPanelSection brief={displayBrief} revision={revision} />
+      )}
 
       {/* Section 08 — Verification (optional, shown when verifier has run) */}
-      {brief?.verification && <VerificationPanel brief={brief} />}
+      {displayBrief?.verification && (
+        <VerificationPanel
+          brief={displayBrief}
+          revealAnimate={!!composedBrief}
+        />
+      )}
 
       {/* Streaming hint */}
-      {isStreaming && !brief && (
+      {isStreaming && !displayBrief && (
         <p
           style={{
             textAlign: 'center',

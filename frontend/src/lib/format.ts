@@ -56,8 +56,14 @@ export function fmtCap(n: number | null | undefined, symbol = '$'): string {
  * Only removes parenthesised citation-id patterns, not other parens.
  */
 export function stripInlineCites(text: string): string {
-  // Match "(c\d+)" or "(c\d+, c\d+, …)" with optional whitespace
+  // Parenthesised: "(c4)" or "(c4, c5)" with optional whitespace
   let result = text.replace(/\s*\(\s*c\d+(?:\s*,\s*c\d+)*\s*\)/g, '');
+  // Bracketed: "[c4]" or "[c4, c5]"
+  result = result.replace(/\s*\[\s*c\d+(?:\s*,\s*c\d+)*\s*\]/g, '');
+  // Bare tokens the model sometimes leaks with no brackets/parens, e.g.
+  // "Volume trend is rising. c3" — strip a standalone "c<digits>" (and any
+  // comma-joined run) so it doesn't sit next to a rendered citation pill.
+  result = result.replace(/\s*\bc\d+\b(?:\s*,\s*c\d+\b)*/g, '');
   // Second pass: remove any now-empty brackets/parens left behind (e.g. "[(c2)]"
   // becomes "[]" after the first pass — strip those too, then tidy up spacing.
   result = result.replace(/\[\s*\]/g, '').replace(/\(\s*\)/g, '');

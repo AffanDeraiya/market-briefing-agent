@@ -879,6 +879,130 @@
     line-height: 1.4;
   }
 
+  /* ---- Verifier live transition (reason → verify → revised brief) ---- */
+  .verifying-toast {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 9998;
+    width: 280px;
+    max-width: calc(100vw - 36px);
+    padding: 12px 14px;
+    background: var(--panel);
+    border: 1px solid var(--bd);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+    animation: vt-in 0.28s ease;
+  }
+
+  @keyframes vt-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .verifying-toast .vt-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .verifying-toast .vt-spinner {
+    flex-shrink: 0;
+    width: 13px;
+    height: 13px;
+    border: 2px solid var(--bd);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: vt-spin 0.7s linear infinite;
+  }
+
+  @keyframes vt-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .verifying-toast .vt-title {
+    font: 600 12.5px 'Inter';
+    color: var(--tp);
+  }
+
+  .verifying-toast .vt-progress {
+    margin-top: 6px;
+    font-size: 11.5px;
+    color: var(--accent);
+  }
+
+  .verifying-toast .vt-latest {
+    margin-top: 4px;
+    font-size: 11.5px;
+    color: var(--ts);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Dropped claim fading + collapsing out (rendered from the composed brief) */
+  .bul li.leaving {
+    animation: claim-leave 0.34s ease forwards;
+    overflow: hidden;
+  }
+
+  @keyframes claim-leave {
+    from {
+      opacity: 1;
+      max-height: 120px;
+    }
+    to {
+      opacity: 0;
+      max-height: 0;
+      margin: 0;
+      padding: 0;
+      transform: translateX(-6px);
+    }
+  }
+
+  /* Downgraded / neutralized confidence chip pulse */
+  .pulse-change {
+    animation: pulse-change 0.75s ease;
+    border-radius: 6px;
+  }
+
+  @keyframes pulse-change {
+    0% {
+      background: transparent;
+    }
+    35% {
+      background: rgba(138, 90, 0, 0.16);
+    }
+    100% {
+      background: transparent;
+    }
+  }
+
+  /* "Verified ✓" stamp in the run header (color via currentColor, like badges) */
+  .verified-stamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    font: 600 10.5px 'JetBrains Mono';
+    letter-spacing: 0.02em;
+    color: var(--pos);
+    border: 1px solid currentColor;
+    background: transparent;
+    border-radius: 5px;
+    padding: 2px 7px;
+    opacity: 0.85;
+    white-space: nowrap;
+  }
+
   .bul {
     list-style: none;
     display: flex;
@@ -1653,7 +1777,11 @@
     .skel-veil::after,
     .anom-dot.pulse,
     .pill.running .dot,
-    .st.active .tick {
+    .st.active .tick,
+    .verifying-toast,
+    .verifying-toast .vt-spinner,
+    .bul li.leaving,
+    .pulse-change {
       animation: none;
     }
 
