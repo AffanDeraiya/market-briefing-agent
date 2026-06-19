@@ -1,13 +1,16 @@
 // Section 04 — Bull & bear (two-column layout).
 import type { MarketBrief } from '../lib/types';
+import type { RevisionView } from '../lib/revision';
+import { revClass } from '../lib/revision';
 import { InlineCites } from './Citation';
 import { stripInlineCites } from '../lib/format';
 
 interface Props {
   brief: MarketBrief;
+  revision?: RevisionView;
 }
 
-export function BullBear({ brief }: Props) {
+export function BullBear({ brief, revision }: Props) {
   return (
     <div className="doc-sec tl-item">
       <div className="sec-head">
@@ -20,7 +23,10 @@ export function BullBear({ brief }: Props) {
           <div className="col-head">Bull case</div>
           <ul className="bul">
             {brief.bull_case.map((b, i) => (
-              <li key={i}>
+              <li
+                key={i}
+                className={revClass(revision, `bull_case:${i}`).trim()}
+              >
                 <span>
                   {stripInlineCites(b.text)}
                   <InlineCites ids={b.citations} citations={brief.citations} />
@@ -33,7 +39,10 @@ export function BullBear({ brief }: Props) {
           <div className="col-head">Bear case</div>
           <ul className="bul">
             {brief.bear_case.map((b, i) => (
-              <li key={i}>
+              <li
+                key={i}
+                className={revClass(revision, `bear_case:${i}`).trim()}
+              >
                 <span>
                   {stripInlineCites(b.text)}
                   <InlineCites ids={b.citations} citations={brief.citations} />

@@ -1,4 +1,5 @@
 // Section 08 — Verification results from the Claim Verifier agent.
+import { useEffect, useRef } from 'react';
 import type { MarketBrief, ClaimVerdict } from '../lib/types';
 
 const VERDICT_COLORS: Record<ClaimVerdict['verdict'], string> = {
@@ -23,16 +24,29 @@ const ACTION_LABELS: Record<ClaimVerdict['action'], string> = {
 
 interface Props {
   brief: MarketBrief;
+  /** True on a live run (just revised) — scroll the panel into view once as it
+   *  reveals. False for cached recents (panel shows statically, no scroll). */
+  revealAnimate?: boolean;
 }
 
-export function VerificationPanel({ brief }: Props) {
+export function VerificationPanel({ brief, revealAnimate }: Props) {
+  const ref = useRef<HTMLDivElement>(null);
   const { verification } = brief;
+
+  useEffect(() => {
+    if (revealAnimate && ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    // Run once when the panel reveals on a live revision.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (!verification) return null;
 
   const { verdicts, checked, supported, adjusted, dropped } = verification;
 
   return (
-    <div className="doc-sec tl-item verify-panel">
+    <div ref={ref} className="doc-sec tl-item verify-panel">
       <div className="sec-head">
         <span className="ix">08</span>
         <h2>Verification</h2>

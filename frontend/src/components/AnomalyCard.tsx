@@ -1,5 +1,6 @@
 // Section 02 — Anomaly investigated.
 import type { Anomaly, Citation, Verification } from '../lib/types';
+import type { RevisionView } from '../lib/revision';
 import { InlineCites } from './Citation';
 import { stripInlineCites } from '../lib/format';
 import { useRunStore } from '../store/runStore';
@@ -10,9 +11,16 @@ interface Props {
   sigma?: string;
   citations: Citation[];
   verification?: Verification | null;
+  revision?: RevisionView;
 }
 
-function ConfRow({ confidence }: { confidence: Anomaly['confidence'] }) {
+function ConfRow({
+  confidence,
+  pulse,
+}: {
+  confidence: Anomaly['confidence'];
+  pulse?: boolean;
+}) {
   const label =
     confidence === 'high'
       ? 'High confidence — public cause identified'
@@ -28,7 +36,10 @@ function ConfRow({ confidence }: { confidence: Anomaly['confidence'] }) {
         : 'var(--ts)';
 
   return (
-    <div className="conf-row" style={{ color: col }}>
+    <div
+      className={`conf-row${pulse ? ' pulse-change' : ''}`}
+      style={{ color: col }}
+    >
       <span className="dot" style={{ background: col }} aria-hidden="true" />
       {label}
     </div>
@@ -40,6 +51,7 @@ export function AnomalyCard({
   sigma,
   citations,
   verification,
+  revision,
 }: Props) {
   const hoveredAnomaly = useRunStore((s) => s.hoveredAnomaly);
   const setHoveredAnomaly = useRunStore((s) => s.setHoveredAnomaly);
@@ -60,7 +72,10 @@ export function AnomalyCard({
           {stripInlineCites(anomaly.explanation)}
           <InlineCites ids={anomaly.citations} citations={citations} />
         </p>
-        <ConfRow confidence={anomaly.confidence} />
+        <ConfRow
+          confidence={anomaly.confidence}
+          pulse={revision?.changed.has(`anomaly:${anomaly.date}`)}
+        />
         <VerdictBadge
           target={`anomaly:${anomaly.date}`}
           verification={verification}
@@ -82,9 +97,10 @@ interface SectionProps {
     verification?: Verification | null;
   };
   chartSigmas?: Record<string, string>;
+  revision?: RevisionView;
 }
 
-export function AnomalySection({ brief, chartSigmas }: SectionProps) {
+export function AnomalySection({ brief, chartSigmas, revision }: SectionProps) {
   if (brief.anomalies.length === 0) {
     return (
       <div className="doc-sec tl-item">
@@ -115,6 +131,7 @@ export function AnomalySection({ brief, chartSigmas }: SectionProps) {
             sigma={chartSigmas?.[a.date]}
             citations={brief.citations}
             verification={brief.verification}
+            revision={revision}
           />
         ))}
       </div>

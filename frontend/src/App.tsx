@@ -6,6 +6,7 @@ import { Home } from './components/Home';
 import { AgentLogStrip } from './components/AgentLogStrip';
 import { RunHeader } from './components/RunHeader';
 import { Board } from './components/Board';
+import { VerifyingToast } from './components/VerifyingToast';
 import { DisclaimerFooter } from './components/DisclaimerFooter';
 
 const GITHUB_URL = 'https://github.com/AffanDeraiya/market-briefing-agent';
@@ -19,6 +20,7 @@ export function App() {
   const log = useRunStore((s) => s.log);
   const chartData = useRunStore((s) => s.chartData);
   const brief = useRunStore((s) => s.brief);
+  const composedBrief = useRunStore((s) => s.composedBrief);
   const usage = useRunStore((s) => s.usage);
   const error = useRunStore((s) => s.error);
   const retryAfterS = useRunStore((s) => s.retryAfterS);
@@ -226,12 +228,16 @@ export function App() {
           !!(brief || chartData))) && (
         <Board
           brief={brief}
+          composedBrief={composedBrief}
           chartData={chartData}
           ticker={ticker || 'AAPL'}
           period={period}
           isStreaming={status === 'streaming'}
         />
       )}
+
+      {/* Claim Verifier running indicator (overlays the composed brief) */}
+      <VerifyingToast />
 
       {/* Back to home — show after successful run or manual stop (error states have it in the card) */}
       {(status === 'success' || status === 'stopped') && (

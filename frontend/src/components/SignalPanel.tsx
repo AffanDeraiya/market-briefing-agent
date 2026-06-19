@@ -1,5 +1,6 @@
 // Section 07 — Signal (optional buy/sell stance).
 import type { Signal, MarketBrief } from '../lib/types';
+import type { RevisionView } from '../lib/revision';
 import { InlineCites } from './Citation';
 import { stripInlineCites } from '../lib/format';
 import { VerdictBadge } from './VerdictBadge';
@@ -36,11 +37,18 @@ export function SignalHero({ signal }: { signal: Signal }) {
   );
 }
 
-export function SignalPanelSection({ brief }: { brief: MarketBrief }) {
+export function SignalPanelSection({
+  brief,
+  revision,
+}: {
+  brief: MarketBrief;
+  revision?: RevisionView;
+}) {
   const { signal, citations } = brief;
   if (!signal) return null;
 
   const { label, color } = STANCE_META[signal.stance];
+  const pulse = revision?.changed.has('signal') ?? false;
 
   return (
     <div className="doc-sec tl-item">
@@ -61,7 +69,10 @@ export function SignalPanelSection({ brief }: { brief: MarketBrief }) {
           {label}
           <VerdictBadge target="signal" verification={brief.verification} />
         </div>
-        <div className="conf-row" style={{ color }}>
+        <div
+          className={`conf-row${pulse ? ' pulse-change' : ''}`}
+          style={{ color }}
+        >
           <span
             className="dot"
             style={{ background: color }}

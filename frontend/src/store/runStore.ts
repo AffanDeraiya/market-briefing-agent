@@ -81,6 +81,9 @@ export interface RunState {
   log: LogStep[];
   chartData: ChartDataPayload | null;
   brief: MarketBrief | null;
+  /** The pre-verification ("composed") brief, kept so the verify revision can
+   *  animate the diff. Null until the first `brief` event of a live run. */
+  composedBrief: MarketBrief | null;
   usage: UsagePayload | null;
 
   // For crosshair / anomaly linking
@@ -123,6 +126,7 @@ export const useRunStore = create<RunState>((set, get) => ({
   log: [],
   chartData: null,
   brief: null,
+  composedBrief: null,
   usage: null,
   hoveredAnomaly: null,
   verifying: false,
@@ -143,6 +147,7 @@ export const useRunStore = create<RunState>((set, get) => ({
       log: [],
       chartData: null,
       brief: null,
+      composedBrief: null,
       usage: null,
       error: null,
       retryAfterS: null,
@@ -177,6 +182,7 @@ export const useRunStore = create<RunState>((set, get) => ({
           log: [],
           chartData: null,
           brief: null,
+          composedBrief: null,
           usage: null,
           error: null,
         });
@@ -240,9 +246,19 @@ export const useRunStore = create<RunState>((set, get) => ({
         break;
       }
 
-      case 'brief':
-        set({ brief: ev.data });
+      case 'brief': {
+        // Live runs emit `brief` twice: the composed brief first, then the
+        // revised brief after verification. Keep the first as `composedBrief`
+        // so the revision can be diffed/animated; later emits only update
+        // `brief`. Offline/demo single-emit runs set both to the same object
+        // (no revision animation fires).
+        if (get().composedBrief === null) {
+          set({ brief: ev.data, composedBrief: ev.data });
+        } else {
+          set({ brief: ev.data });
+        }
         break;
+      }
 
       case 'usage': {
         // Only advance to 'success' if there's a brief — an error event that
@@ -291,11 +307,12 @@ export const useRunStore = create<RunState>((set, get) => ({
       case 'error':
         // budget exhaustion gets its own dedicated status so the UI can
         // render a specific message (GitHub link etc.) without needing to
-        // parse the error string.
+        // parse the error string. Clear `verifying` so the toast can't spin
+        // forever if the stream errored mid-verify.
         if (ev.data.kind === 'budget') {
-          set({ status: 'error', error: '__budget__' });
+          set({ status: 'error', error: '__budget__', verifying: false });
         } else {
-          set({ status: 'error', error: ev.data.message });
+          set({ status: 'error', error: ev.data.message, verifying: false });
         }
         break;
 
@@ -339,6 +356,7 @@ export const useRunStore = create<RunState>((set, get) => ({
       log: [],
       chartData: null,
       brief: null,
+      composedBrief: null,
       usage: null,
       error: null,
       hoveredAnomaly: null,
@@ -396,6 +414,7 @@ export const useRunStore = create<RunState>((set, get) => ({
       log: [],
       chartData: null,
       brief: null,
+      composedBrief: null,
       usage: null,
       error: null,
       retryAfterS: null,
@@ -490,10 +509,17 @@ export const useRunStore = create<RunState>((set, get) => ({
       log: r.log ?? [],
       chartData: r.chartData ?? null,
       brief: r.brief,
+      // A cached brief shows its Verification panel statically (from saved
+      // `brief.verification`) — no live transition. Clear all transient
+      // verify state so the toast doesn't show and no animation replays.
+      composedBrief: null,
       usage: r.usage ?? null,
       model: r.model ?? '',
       error: null,
       hoveredAnomaly: null,
+      verifying: false,
+      verdicts: [],
+      claimsTotal: 0,
     });
   },
 }));
