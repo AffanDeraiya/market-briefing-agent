@@ -69,6 +69,11 @@ export function Home({ onGenerate }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchAbortRef = useRef<AbortController | null>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // When the ticker is set programmatically (picking a suggestion or a chip),
+  // skip the very next suggestion-search cycle — otherwise the [ticker] effect
+  // re-runs and reopens the dropdown with the single exact match right after the
+  // user just dismissed it by choosing.
+  const suppressSearchRef = useRef(false);
   const recents = useRunStore((s) => s.recents);
   const loadRecent = useRunStore((s) => s.loadRecent);
   const setStoreStatus = useRunStore((s) => s.setStatus);
@@ -102,6 +107,12 @@ export function Home({ onGenerate }: Props) {
   }, [ticker, doValidate]);
 
   useEffect(() => {
+    // Skip exactly one cycle after a programmatic ticker set (suggestion/chip),
+    // so the dropdown stays dismissed instead of reopening with the match.
+    if (suppressSearchRef.current) {
+      suppressSearchRef.current = false;
+      return;
+    }
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     const q = ticker.trim();
     searchDebounceRef.current = setTimeout(async () => {
@@ -124,6 +135,7 @@ export function Home({ onGenerate }: Props) {
 
   const selectSuggestion = useCallback(
     (s: SymbolSuggestion) => {
+      suppressSearchRef.current = true;
       setTicker(s.symbol);
       setSuggestions([]);
       setShowSuggestions(false);
@@ -134,6 +146,7 @@ export function Home({ onGenerate }: Props) {
   );
 
   const handleChip = (chip: string) => {
+    suppressSearchRef.current = true;
     setTicker(chip);
     setSuggestions([]);
     setShowSuggestions(false);

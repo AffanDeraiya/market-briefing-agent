@@ -801,85 +801,73 @@
     font-style: italic;
   }
 
-  /* ---- Verification panel (Section 08) ---- */
-  .verify-panel .verify-summary {
-    margin-bottom: 16px;
-  }
-
-  .verdict-list {
+  /* ---- Verification banner (top of brief) + jump flash ---- */
+  .verif-banner {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .verdict-row {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    padding: 9px 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-bottom: 18px;
+    padding: 10px 14px;
     background: var(--raised);
     border: 1px solid var(--bd);
+    border-left: 3px solid var(--pos);
     border-radius: 8px;
-    font-size: 13px;
-    line-height: 1.5;
   }
 
-  .verdict-dot {
-    flex-shrink: 0;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    margin-top: 5px;
-    align-self: flex-start;
+  .verif-banner .vb-mark {
+    color: var(--pos);
+    font-weight: 700;
   }
 
-  .verdict-label {
-    flex-shrink: 0;
-    font: 500 11.5px 'JetBrains Mono';
+  .verif-banner .vb-text {
+    font: 500 13px 'Inter';
     color: var(--tp);
-    min-width: 0;
-    max-width: 220px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
-  .verdict-action {
-    flex-shrink: 0;
+  .verif-banner .vb-chips {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: auto;
+  }
+
+  .verif-banner .vb-chip {
     font: 600 11px 'JetBrains Mono';
-    letter-spacing: 0.03em;
+    color: var(--accent);
     background: var(--panel);
     border: 1px solid var(--bd);
-    border-radius: 4px;
-    padding: 1px 6px;
+    border-radius: 5px;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition:
+      border-color 0.15s,
+      color 0.15s;
   }
 
-  .verdict-note {
-    flex: 1;
-    font-size: 12.5px;
-    color: var(--ts);
-    min-width: 0;
-    line-height: 1.5;
+  .verif-banner .vb-chip:hover {
+    border-color: var(--accent);
   }
 
-  /* Inline verdict badge — color is set inline; we only control shape + type */
-  .verdict-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font: 600 10.5px 'JetBrains Mono';
-    letter-spacing: 0.03em;
-    background: transparent;
-    border: 1px solid currentColor;
-    border-radius: 4px;
-    padding: 1px 6px;
-    opacity: 0.9;
-    vertical-align: middle;
-    margin-left: 6px;
-    line-height: 1.4;
+  /* Section flash when jumped-to from the banner */
+  .jump-flash {
+    animation: jump-flash 1.1s ease;
+    border-radius: 8px;
   }
 
-  /* ---- Verifier live transition (reason → verify → revised brief) ---- */
+  @keyframes jump-flash {
+    0% {
+      background: transparent;
+    }
+    20% {
+      background: rgba(30, 58, 95, 0.1);
+    }
+    100% {
+      background: transparent;
+    }
+  }
+
+  /* ---- Verifier transition (toast + guided walkthrough) ---- */
   .verifying-toast {
     position: fixed;
     right: 18px;
@@ -948,27 +936,56 @@
     white-space: nowrap;
   }
 
-  /* Dropped claim fading + collapsing out (rendered from the composed brief) */
-  .bul li.leaving {
-    animation: claim-leave 0.34s ease forwards;
+  /* Guided walkthrough — active line highlight + char-by-char removal */
+  .bul li.wk-active {
+    max-height: 200px;
     overflow: hidden;
+    padding-left: 8px;
+    background: rgba(30, 58, 95, 0.06);
+    border-radius: 6px;
+    box-shadow: inset 2px 0 0 var(--accent);
+    transition:
+      max-height 0.25s ease,
+      opacity 0.25s ease,
+      padding 0.25s ease,
+      margin 0.25s ease;
   }
 
-  @keyframes claim-leave {
-    from {
+  .bul li.wk-active.wk-collapsing {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin: 0;
+  }
+
+  .wk-cursor {
+    display: inline-block;
+    margin-left: 1px;
+    color: var(--accent);
+    font-weight: 600;
+    animation: wk-blink 0.9s steps(1) infinite;
+  }
+
+  @keyframes wk-blink {
+    0%,
+    50% {
       opacity: 1;
-      max-height: 120px;
     }
-    to {
+    50.01%,
+    100% {
       opacity: 0;
-      max-height: 0;
-      margin: 0;
-      padding: 0;
-      transform: translateX(-6px);
     }
   }
 
-  /* Downgraded / neutralized confidence chip pulse */
+  /* Anomaly / signal panel highlight while the walk is on it */
+  .anom-panel.wk-active,
+  .signal-panel.wk-active {
+    box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.18);
+    transition: box-shadow 0.3s ease;
+  }
+
+  /* Confidence chip pulse when the walk recalibrates it */
   .pulse-change {
     animation: pulse-change 0.75s ease;
     border-radius: 6px;
@@ -1001,6 +1018,30 @@
     padding: 2px 7px;
     opacity: 0.85;
     white-space: nowrap;
+  }
+
+  /* Skip control for the guided walkthrough */
+  .wk-skip {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 9998;
+    font: 600 12px 'JetBrains Mono';
+    color: var(--ts);
+    background: var(--panel);
+    border: 1px solid var(--bd);
+    border-radius: 8px;
+    padding: 7px 12px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    transition:
+      border-color 0.15s,
+      color 0.15s;
+  }
+
+  .wk-skip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .bul {
@@ -1780,7 +1821,8 @@
     .st.active .tick,
     .verifying-toast,
     .verifying-toast .vt-spinner,
-    .bul li.leaving,
+    .wk-cursor,
+    .jump-flash,
     .pulse-change {
       animation: none;
     }

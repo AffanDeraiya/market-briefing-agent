@@ -1,18 +1,16 @@
 // Section 03 — What the news says.
 import type { MarketBrief } from '../lib/types';
-import type { RevisionView } from '../lib/revision';
-import { revClass } from '../lib/revision';
-import { InlineCites } from './Citation';
-import { stripInlineCites } from '../lib/format';
+import type { Walkthrough } from '../lib/walkthrough';
+import { WalkBullet } from './WalkBullet';
 
 interface Props {
   brief: MarketBrief;
-  revision?: RevisionView;
+  walk?: Walkthrough;
 }
 
-export function NewsList({ brief, revision }: Props) {
+export function NewsList({ brief, walk }: Props) {
   return (
-    <div className="doc-sec tl-item">
+    <div className="doc-sec tl-item" id="sec-news">
       <div className="sec-head">
         <span className="ix">03</span>
         <h2>What the news says</h2>
@@ -20,15 +18,13 @@ export function NewsList({ brief, revision }: Props) {
       </div>
       <ul className="bul">
         {brief.news_highlights.map((b, i) => (
-          <li
+          <WalkBullet
             key={i}
-            className={revClass(revision, `news_highlights:${i}`).trim()}
-          >
-            <span>
-              {stripInlineCites(b.text)}
-              <InlineCites ids={b.citations} citations={brief.citations} />
-            </span>
-          </li>
+            bullet={b}
+            citations={brief.citations}
+            target={`news_highlights:${i}`}
+            walk={walk}
+          />
         ))}
       </ul>
     </div>
