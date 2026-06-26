@@ -36,7 +36,7 @@ React SPA ──POST /api/brief──▶ FastAPI (slowapi per-IP + global daily 
 ```
 
 - **`docs/schema.md` is the contract**: agent loop state machine, all 7 tool I/O shapes, the SSE event protocol, and the `MarketBrief` output schema. Code must mirror it; change the doc first.
-- `src/llm.py` normalizes Anthropic `tool_use`/`tool_result` blocks and OpenAI-style `tool_calls` into internal `ToolCall`/`ToolResult` types; the loop never touches provider wire formats. Dev/demo runs on Gemini free tier (`gemini-2.5-flash`); showcase/cassettes on `claude-haiku-4-5`. OpenAI-format tool `arguments` arrive as a JSON string — parse defensively.
+- `src/llm.py` normalizes Anthropic `tool_use`/`tool_result` blocks and OpenAI-style `tool_calls` into internal `ToolCall`/`ToolResult` types; the loop never touches provider wire formats. Dev/demo runs on Gemini free tier (`gemini-2.5-flash`); cassettes recorded on OpenRouter `openai/gpt-oss-120b:free`. The `anthropic` native-SDK backend is kept as a one-env-var option but is not used in dev/demo. OpenAI-format tool `arguments` arrive as a JSON string — parse defensively.
 - Stateless backend, no database; disk cache (`.cache/`) for yfinance only. One brief = one agent run = one SSE stream.
 - Tool outputs are compact by design (summaries, not raw dumps — e.g., weekly aggregates + notable days, never 250 OHLCV rows); raw data goes to the UI via the `chart_data` SSE event, not through the LLM.
 - Stop conditions: final JSON brief, or budget caps reached → inject "finalize now", or error. Parse failure gets exactly one repair round-trip, then fails honestly.

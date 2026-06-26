@@ -8,7 +8,7 @@ Market Briefing Agent produces a structured, **fully cited** brief for any ticke
 
 ## 2. Goals
 
-1. Showcase a hand-rolled Claude SDK agentic loop with conditional multi-step reasoning (portfolio goal — this is the interview centerpiece).
+1. Showcase a provider-agnostic LangGraph agent with a hand-written conditional multi-step reasoning loop (portfolio goal — this is the interview centerpiece).
 2. Produce briefs a reasonable person finds genuinely useful and verifiably sourced.
 3. Zero-friction public demo: enter ticker → watch agent think → get brief. No signup.
 4. Be safe to run unattended on a personal API key (caps everywhere).
@@ -59,7 +59,7 @@ Three automated gates (detailed in techspec §7): anomaly-detector correctness o
 | Citation faithfulness (cited source exists in tool results & supports text) | ≥ 95% |
 | Structure compliance (brief parses against schema) | ≥ 98% of runs |
 | End-to-end brief latency (P50) | ≤ 60s |
-| Cost per brief (Haiku) | ≤ $0.03 |
+| Cost per brief (free-tier model) | $0 |
 | New-visitor time to first streaming step | ≤ 10s |
 | Backend core test coverage (tools, detectors, loop) | ≥ 80% |
 | Lighthouse performance/accessibility | ≥ 90 |
@@ -71,7 +71,7 @@ Three automated gates (detailed in techspec §7): anomaly-detector correctness o
 | Hallucinated market claims | Citation requirement enforced in prompt + faithfulness eval; uncited claims rejected at parse |
 | yfinance breakage/rate limits | Thin adapter layer; 24h on-disk cache per ticker+period; graceful errors |
 | Search returns junk/paywalled pages | fetch_page extracts with trafilatura, falls back to snippet; agent told to prefer multiple sources |
-| Cost blowout | Haiku + MAX_TOOL_CALLS=15 + MAX_ITERATIONS=20 + token caps + global daily brief cap + provider spend limit |
+| Cost blowout | Free-tier model + MAX_TOOL_CALLS=15 + MAX_ITERATIONS=20 + token caps + global daily brief cap + provider spend limit |
 | "Tutorial stock bot" perception | F2 depth, citations, evals, reasoning UI — differentiators are P0, not afterthoughts |
 | Regulatory/advice concerns | Persistent disclaimer; no recommendations, only sourced analysis |
 | Free-tier server cold starts | "Waking up" UI state + health ping |
