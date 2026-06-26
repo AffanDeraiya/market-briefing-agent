@@ -66,7 +66,9 @@ export function App() {
   if (!isRunView) {
     return (
       <div className="app">
-        <Home onGenerate={handleGenerate} />
+        <main>
+          <Home onGenerate={handleGenerate} />
+        </main>
         <DisclaimerFooter />
       </div>
     );
@@ -220,19 +222,21 @@ export function App() {
       )}
 
       {/* Main board — show while streaming/success, or when stopped/error with partial data */}
-      {(status === 'streaming' ||
-        status === 'success' ||
-        ((status === 'error' || status === 'stopped') &&
-          !!(brief || chartData))) && (
-        <Board
-          brief={brief}
-          composedBrief={composedBrief}
-          chartData={chartData}
-          ticker={ticker || 'AAPL'}
-          period={period}
-          isStreaming={status === 'streaming'}
-        />
-      )}
+      <main>
+        {(status === 'streaming' ||
+          status === 'success' ||
+          ((status === 'error' || status === 'stopped') &&
+            !!(brief || chartData))) && (
+          <Board
+            brief={brief}
+            composedBrief={composedBrief}
+            chartData={chartData}
+            ticker={ticker || 'AAPL'}
+            period={period}
+            isStreaming={status === 'streaming'}
+          />
+        )}
+      </main>
 
       {/* Claim Verifier running indicator (overlays the composed brief) */}
       <VerifyingToast />

@@ -4,12 +4,16 @@
 // composed brief (so removed lines are still present to backspace) while the
 // rest render the revised brief.
 
-import { useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import type { MarketBrief, ChartDataPayload } from '../lib/types';
 import { currencySymbol } from '../lib/format';
 import { useVerifyWalkthrough } from '../lib/walkthrough';
 import { SkeletonVeil } from './Skeleton';
-import { PriceChart } from './PriceChart';
+// Lazy-loaded so Recharts is code-split out of the initial bundle (Lighthouse
+// perf pass) — the chart isn't needed until a brief renders.
+const PriceChart = lazy(() =>
+  import('./PriceChart').then((m) => ({ default: m.PriceChart })),
+);
 import { SnapshotBar } from './SnapshotBar';
 import { RangeBar } from './RangeBar';
 import { TechnicalRead } from './TechnicalRead';
@@ -120,12 +124,16 @@ export function Board({
         minHeight={260}
       >
         {chartData ? (
-          <PriceChart
-            chartData={chartData}
-            period={period}
-            ticker={ticker}
-            currencySymbol={sym}
-          />
+          <Suspense
+            fallback={<div className="chartbox" style={{ minHeight: 260 }} />}
+          >
+            <PriceChart
+              chartData={chartData}
+              period={period}
+              ticker={ticker}
+              currencySymbol={sym}
+            />
+          </Suspense>
         ) : (
           <div className="chartbox" style={{ minHeight: 260 }} />
         )}

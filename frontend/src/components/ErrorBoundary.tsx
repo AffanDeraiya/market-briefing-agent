@@ -20,8 +20,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: unknown): State {
-    const message =
-      error instanceof Error ? error.message : String(error);
+    const message = error instanceof Error ? error.message : String(error);
     return { hasError: true, message };
   }
 
@@ -50,7 +49,9 @@ export class ErrorBoundary extends Component<Props, State> {
           >
             <div className="err-header" style={{ justifyContent: 'center' }}>
               <span className="err-icon">⚠</span>
-              <span className="err-title">Something went wrong rendering this brief</span>
+              <span className="err-title">
+                Something went wrong rendering this brief
+              </span>
             </div>
             {this.state.message && (
               <p className="err-msg">{this.state.message}</p>
@@ -68,7 +69,7 @@ export class ErrorBoundary extends Component<Props, State> {
             style={{
               marginTop: 24,
               fontSize: 12,
-              color: 'var(--tt, #a09d96)',
+              color: 'var(--tt, #6e6b62)',
               fontFamily: 'Inter, sans-serif',
               maxWidth: 480,
               textAlign: 'center',

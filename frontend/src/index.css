@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Fonts are loaded via <link> in index.html (preconnect + non-render-blocking)
+   rather than a render-blocking CSS @import — see Lighthouse perf pass. */
 @import 'tailwindcss';
 
 /* ============================================================
@@ -54,7 +55,7 @@
     --bd: #d6d4ce;
     --tp: #1c1b18;
     --ts: #6b6860;
-    --tt: #a09d96;
+    --tt: #6e6b62; /* WCAG AA: 4.8:1 on --bg (was #a09d96 = 2.4:1) */
     --pos: #1a6b3a;
     --neg: #a02020;
     --anom: #8a5a00;
@@ -1338,7 +1339,7 @@
     padding: 9px 15px;
   }
 
-  .home .periods button[aria-selected='true'] {
+  .home .periods button[aria-checked='true'] {
     background: var(--accent);
     color: #fff;
   }
