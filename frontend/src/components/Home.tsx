@@ -199,8 +199,10 @@ export function Home({ onGenerate }: Props) {
             onChange={(e) => setTicker(e.target.value.toUpperCase())}
             placeholder="AAPL"
             spellCheck={false}
+            role="combobox"
             aria-label="Stock ticker"
             aria-autocomplete="list"
+            aria-controls="ticker-suggestions"
             aria-expanded={showSuggestions && suggestions.length > 0}
             onFocus={() => {
               if (suggestions.length > 0) setShowSuggestions(true);
@@ -262,6 +264,7 @@ export function Home({ onGenerate }: Props) {
           {showSuggestions && suggestions.length > 0 && (
             <ul
               className="ac-list"
+              id="ticker-suggestions"
               role="listbox"
               aria-label="Ticker suggestions"
             >
@@ -292,11 +295,16 @@ export function Home({ onGenerate }: Props) {
           ))}
         </div>
         <div className="row">
-          <div className="periods" role="group" aria-label="Period selector">
+          <div
+            className="periods"
+            role="radiogroup"
+            aria-label="Period selector"
+          >
             {PERIODS.map((p) => (
               <button
                 key={p}
-                aria-selected={period === p}
+                role="radio"
+                aria-checked={period === p}
                 onClick={() => setPeriod(p)}
               >
                 {p}
