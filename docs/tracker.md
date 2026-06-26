@@ -2,7 +2,7 @@
 
 Update at the end of every working session (rules.md #12). Status: `todo` / `wip` / `done` / `blocked` / `cut`.
 
-**Started:** 2026-06-13  ·  **Target ship:** _(date)_  ·  **Current phase:** 7 (Ship) — deployed & live; Lighthouse prod 96/100/100/100; README + eval gates done. Remaining: README demo GIF (manual capture) + LinkedIn/resume bullet. · **active branch:** `working` (master = final; merge after full testing)
+**Started:** 2026-06-13  ·  **Target ship:** _(date)_  ·  **Current phase:** 7 (Ship) — deployed & live; Lighthouse prod 96/100/100/100; README (with demo GIF) + eval gates done. Remaining: LinkedIn/resume bullet (resume Projects copy drafted). · **active branch:** `working` (master = final; merge after full testing)
 
 ## Phase 0 — Scaffold
 - [x] Repo init, layout, license, Makefile
@@ -67,7 +67,7 @@ Update at the end of every working session (rules.md #12). Status: `todo` / `wip
 ## Phase 7 — Ship
 - [x] ~~Anthropic spend cap set~~ — N/A: dev/demo run on free tiers only (Anthropic scrubbed from positioning; adapter kept as optional)
 - [x] Docker + Render (BE) + Vercel (FE) deployed — live & health-verified
-- [x] README: architecture diagram, eval table (100%/100%), ≤5-cmd quickstart, Limitations, disclaimer — **GIF still pending** (manual screen-capture)
+- [x] README: architecture diagram, eval table (100%/100%), ≤5-cmd quickstart, Limitations, disclaimer, **demo GIF** (Playwright-driven demo-mode run → ffmpeg-static, 1000×625 / ~16s / 8.9 MB)
 - [x] Lighthouse ≥90 — **live prod: Perf 96 · A11y 100 · Best-Practices 100 · SEO 100** (FCP/LCP 2.2s, TBT 0, CLS 0.003)
 - [ ] Resume/LinkedIn bullet with live URL + metric (deferred — user will draft a LinkedIn post later)
 
