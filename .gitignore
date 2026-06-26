@@ -28,6 +28,10 @@ dist/
 # Design mockups (reference only, not shipped)
 mockups/
 
+# Demo source/backup byproducts (only the optimized docs/demo.gif ships)
+docs/demo.mp4
+docs/demo-original-*.bak
+
 # OS / editor
 .DS_Store
 Thumbs.db
