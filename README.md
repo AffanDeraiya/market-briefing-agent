@@ -4,7 +4,9 @@
 
 A single LangGraph agent that doesn't just summarize a stock — it **detects anomalies in the price/volume data deterministically, then autonomously investigates each one** with date-scoped news searches before composing the brief. An independent **Claim Verifier** pass then audits every cited claim against the retrieved evidence and refines the brief. Every bullet carries a citation; the parser rejects uncited claims.
 
-🔗 **Live demo:** _<add-vercel-url>_  ·  **API:** _<add-render-url>_
+🔗 **Live demo:** https://market-briefing-agent.vercel.app  ·  **API health:** https://market-briefing-agent.onrender.com/api/health
+
+> Note: the demo backend is on Render's free tier — the first request after idle can take ~30–60s to wake.
 
 > ⚠️ **Not financial advice.** This is an engineering portfolio project. Briefs are AI-generated analyses of public data for informational purposes only — not investment advice, recommendations, or solicitations.
 
