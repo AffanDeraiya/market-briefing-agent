@@ -5,7 +5,7 @@ Non-negotiable for the project's lifetime. Applies to human and AI-assisted cont
 ## Security & Cost
 1. **No secrets in the repo, ever.** Env vars only; `.env` gitignored; gitleaks pre-commit stays on. Leaked key → rotate immediately, don't just rewrite history.
 2. **Every external call is bounded**: LLM calls have max_tokens + the run has iteration/tool-call caps; tools have 10s timeouts; the whole run has a 120s timeout. No "temporary" unbounded debug code.
-3. **Caps before public deploy**: Anthropic console spend limit + per-IP + global daily limits must exist before the URL is shared anywhere.
+3. **Caps before public deploy**: per-IP + global daily limits must exist before the URL is shared anywhere. (Dev/demo runs on free-tier provider keys, so there is no paid-spend exposure.)
 4. **The LLM never computes numbers.** Prices, returns, indicators, anomalies come from deterministic tested Python. The LLM interprets, investigates, and writes.
 
 ## Truthfulness (this project's soul)
@@ -41,6 +41,6 @@ D. **Every agent must be testable alone** via its `run.py` — this is non-negot
 15. **Descope, don't half-build.** Cut in the order listed in implementation_plan.md; what ships stays polished.
 16. **For Claude Code specifically:** follow the phase order; don't start a later phase early; if a doc seems wrong or ambiguous, flag it and propose the doc change rather than silently diverging; record any deviation in the tracker's decisions log.
 
-## Honesty (resume-critical)
-17. **Every public claim must be demo-able.** README metrics come from committed eval runner output, not estimates. The resume bullet uses the same numbers.
+## Honesty
+17. **Every public claim must be demo-able.** README metrics come from committed eval runner output, not estimates.
 18. **Limitations are documented publicly** (data delays, model, caps, single-ticker scope). Stated limits read as seniority, not weakness.

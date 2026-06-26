@@ -6,7 +6,7 @@
 |---|---|---|
 | Agent | **LangGraph `StateGraph`** (`agent.py`) wiring hand-written nodes (`nodes.py`): validate_input → reason (multi-step tool-use loop) → parse_and_enrich → verify (Claim Verifier) → emit. See schema.md §1 | Dep: `langgraph` — used only as the orchestration layer; node bodies, the LLM↔tool loop, `llm.py` provider adapter, tools, parser and grounding stay ours. Nodes consume normalized types from `llm.py`, not provider wire formats |
 | LLM adapter | `src/llm.py` — two backends behind `LLM_PROVIDER`: `anthropic` (native `anthropic` SDK, Messages API `tools`) and `gemini`/`groq` (the `openai` SDK pointed at the provider's OpenAI-compatible `base_url`) | Normalizes Anthropic `tool_use`/`tool_result` blocks and OpenAI-style `tool_calls` into internal `ToolCall`/`ToolResult` types. Deps: `anthropic` (native blocks), `openai` (OpenAI-compat clients for Gemini/Groq) |
-| Model | Dev/demo: `gemini-2.5-flash` on the **free tier** (~1,500 req/day, $0). Showcase/cassette recording: `claude-haiku-4-5` | `LLM_PROVIDER` + `LLM_MODEL` env vars; zero spend until Anthropic budget exists |
+| Model | Dev/demo: `gemini-2.5-flash` on the **free tier** (~1,500 req/day, $0). Cassettes recorded on OpenRouter `openai/gpt-oss-120b:free` | `LLM_PROVIDER` + `LLM_MODEL` env vars; runs on free-tier keys ($0) |
 | Backend | Python 3.11+, FastAPI, uvicorn | Async throughout |
 | Market data | `yfinance` | No key. Wrapped in adapter (`tools/market_data.py`) with 24h disk cache |
 | Indicators/anomalies | pandas + numpy, pure functions | Deterministic, unit-tested, no LLM |
@@ -138,4 +138,4 @@ Future agents (e.g., Claim Verifier) drop in as `src/agents/<name>/` with the sa
 
 ## 10. Secrets & Config
 
-Env vars only (full list in 00_START_HERE.md). `.env` gitignored; gitleaks pre-commit; provider spend cap set in Anthropic console before public deploy. Dep: `python-dotenv` loads `backend/.env` for local CLI/dev runs (`make brief`); production reads real env vars.
+Env vars only (full list in 00_START_HERE.md). `.env` gitignored; gitleaks pre-commit. Dev/demo runs on free-tier provider keys. Dep: `python-dotenv` loads `backend/.env` for local CLI/dev runs (`make brief`); production reads real env vars.

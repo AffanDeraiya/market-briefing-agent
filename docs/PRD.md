@@ -71,11 +71,11 @@ Three automated gates (detailed in techspec §7): anomaly-detector correctness o
 | Hallucinated market claims | Citation requirement enforced in prompt + faithfulness eval; uncited claims rejected at parse |
 | yfinance breakage/rate limits | Thin adapter layer; 24h on-disk cache per ticker+period; graceful errors |
 | Search returns junk/paywalled pages | fetch_page extracts with trafilatura, falls back to snippet; agent told to prefer multiple sources |
-| Cost blowout | Free-tier model + MAX_TOOL_CALLS=15 + MAX_ITERATIONS=20 + token caps + global daily brief cap + provider spend limit |
+| Cost blowout | Free-tier model ($0) + MAX_TOOL_CALLS=15 + MAX_ITERATIONS=20 + token caps + global daily brief cap |
 | "Tutorial stock bot" perception | F2 depth, citations, evals, reasoning UI — differentiators are P0, not afterthoughts |
 | Regulatory/advice concerns | Persistent disclaimer; no recommendations, only sourced analysis |
 | Free-tier server cold starts | "Waking up" UI state + health ping |
 
 ## 8. Release Definition (v1 done)
 
-Deployed public URL + public repo + README (GIF, architecture diagram, eval table, quickstart ≤ 5 commands, Limitations section) + CI green + all §6 gates met. Then: resume Projects section updated with live link + one metric.
+Deployed public URL + public repo + README (GIF, architecture diagram, eval table, quickstart ≤ 5 commands, Limitations section) + CI green + all §6 gates met.

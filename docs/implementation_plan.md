@@ -48,10 +48,10 @@ Phased; every phase ends runnable and committed. Estimates assume evenings/weeke
 - **Exit:** eval report table exists; CI gate active.
 
 ## Phase 7 — Ship (1 day)
-- Dockerfile multi-stage + compose; deploy Render (BE) + Vercel (FE); env vars + **Anthropic spend cap set first**.
+- Dockerfile multi-stage + compose; deploy Render (BE) + Vercel (FE); env vars (free-tier provider keys).
 - README: demo GIF, architecture diagram (loop + tools), eval table, quickstart ≤5 commands, Limitations.
 - Lighthouse ≥90; manual QA all flows incl. rate-limit and stopped states.
-- **Exit:** PRD §8 satisfied; resume Projects bullet updated with URL + a real metric (e.g., citation faithfulness %).
+- **Exit:** PRD §8 satisfied — deployed public URL + README + CI green + all eval gates met.
 
 ## Dependencies & parallelism
 0→1→2→3 strictly sequential. 4–5 can start once §3 event shapes are frozen (after Phase 3). 6 needs Phase 2 cassettes. 7 last.
