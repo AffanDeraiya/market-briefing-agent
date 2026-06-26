@@ -151,23 +151,42 @@ describe('runStore lifecycle — new Phase-5 statuses', () => {
 
     applyEvent({
       event: 'run_started',
-      data: { run_id: 'x', ticker: 'NVDA', name: 'NVIDIA', period: '3mo', model: 'm' },
+      data: {
+        run_id: 'x',
+        ticker: 'NVDA',
+        name: 'NVIDIA',
+        period: '3mo',
+        model: 'm',
+      },
     });
 
     applyEvent({
       event: 'error',
-      data: { kind: 'upstream', message: 'LLM provider rate limit reached. Please wait a few minutes and try again.' },
+      data: {
+        kind: 'upstream',
+        message:
+          'LLM provider rate limit reached. Please wait a few minutes and try again.',
+      },
     });
 
     // usage always follows error from the backend — must not overwrite error status
     applyEvent({
       event: 'usage',
-      data: { input_tokens: 0, output_tokens: 0, est_cost_usd: 0, tool_calls: 0, iterations: 0, latency_ms: 141 },
+      data: {
+        input_tokens: 0,
+        output_tokens: 0,
+        est_cost_usd: 0,
+        tool_calls: 0,
+        iterations: 0,
+        latency_ms: 141,
+      },
     });
 
     const state = useRunStore.getState();
     expect(state.status).toBe('error');
-    expect(state.error).toBe('LLM provider rate limit reached. Please wait a few minutes and try again.');
+    expect(state.error).toBe(
+      'LLM provider rate limit reached. Please wait a few minutes and try again.',
+    );
     expect(state.usage).not.toBeNull(); // usage data IS stored
   });
 

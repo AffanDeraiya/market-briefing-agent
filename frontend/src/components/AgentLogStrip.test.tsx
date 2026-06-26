@@ -148,7 +148,12 @@ describe('AgentLogStrip', () => {
   // Bug #2: portal pop is NOT rendered inline when step is not hovered
   it('pop card for tool step is not in DOM before hover', () => {
     render(
-      <AgentLogStrip log={LOG} usage={null} status="streaming" model="gemini" />,
+      <AgentLogStrip
+        log={LOG}
+        usage={null}
+        status="streaming"
+        model="gemini"
+      />,
     );
     // The portal pop should not be rendered until mouse enters the step.
     // The pn class (card header name) should not be in document before hover.

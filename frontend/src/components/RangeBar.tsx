@@ -26,7 +26,11 @@ export function RangeBar({ snapshot }: Props) {
       </div>
       <div className="track">
         <div className="grad" aria-hidden="true" />
-        <div className="now" style={{ left: `${pctPos}%` }} role="presentation" />
+        <div
+          className="now"
+          style={{ left: `${pctPos}%` }}
+          role="presentation"
+        />
       </div>
       <div className="r-ends">
         <span className="lo">

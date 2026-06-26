@@ -160,7 +160,13 @@ describe('runStore', () => {
 
     applyEvent({
       event: 'run_started',
-      data: { run_id: 'err1', ticker: 'ZZZZZZ', name: 'ZZZZZZ', period: '3mo', model: 'm' },
+      data: {
+        run_id: 'err1',
+        ticker: 'ZZZZZZ',
+        name: 'ZZZZZZ',
+        period: '3mo',
+        model: 'm',
+      },
     });
 
     applyEvent({
@@ -171,7 +177,14 @@ describe('runStore', () => {
     // backend always sends usage after error
     applyEvent({
       event: 'usage',
-      data: { input_tokens: 0, output_tokens: 0, est_cost_usd: 0, tool_calls: 0, iterations: 0, latency_ms: 50 },
+      data: {
+        input_tokens: 0,
+        output_tokens: 0,
+        est_cost_usd: 0,
+        tool_calls: 0,
+        iterations: 0,
+        latency_ms: 50,
+      },
     });
 
     const state = useRunStore.getState();
@@ -204,7 +217,13 @@ describe('runStore', () => {
 
     applyEvent({
       event: 'run_started',
-      data: { run_id: 'x', ticker: 'AAPL', name: 'Apple', period: '3mo', model: 'm' },
+      data: {
+        run_id: 'x',
+        ticker: 'AAPL',
+        name: 'Apple',
+        period: '3mo',
+        model: 'm',
+      },
     });
 
     applyEvent({

@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
-from typing import Any
+from typing import Any, cast
 
 from src.agents.market_brief.state import RunState
 from src.agents.market_brief.utils.verify import count_claims, run_verification
@@ -285,8 +285,9 @@ def test_llm_partial_anomaly_confidence_downgraded() -> None:
     result = run_verification(brief, run, backend=backend, verify_llm=True)
 
     assert result is not None
-    # high → medium
-    assert brief.anomalies[0].confidence == "medium"
+    # high → medium (mutated in place by run_verification; cast defeats
+    # mypy's stale literal narrowing from the constructor)
+    assert cast(str, brief.anomalies[0].confidence) == "medium"
     assert result.adjusted == 1
     assert result.dropped == 0
 
@@ -353,7 +354,7 @@ def test_llm_unsupported_signal_neutralized() -> None:
     result = run_verification(brief, run, backend=backend, verify_llm=True)
 
     assert result is not None
-    assert brief.signal.stance == "neutral"
+    assert cast(str, brief.signal.stance) == "neutral"
     assert brief.signal.confidence == "low"
     assert brief.signal.citations == []
     assert result.adjusted == 1
@@ -560,7 +561,7 @@ def test_deterministic_buy_stance_empty_bull_case_neutralized() -> None:
     assert isinstance(result, Verification)
 
     # Signal was neutralized
-    assert brief.signal.stance == "neutral"
+    assert cast(str, brief.signal.stance) == "neutral"
     assert brief.signal.confidence == "low"
     assert brief.signal.citations == []
 

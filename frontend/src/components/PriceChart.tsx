@@ -49,7 +49,11 @@ interface CrossTipProps {
   currencySymbol?: string;
 }
 
-function CrossTip({ active, payload, currencySymbol: sym = '$' }: CrossTipProps) {
+function CrossTip({
+  active,
+  payload,
+  currencySymbol: sym = '$',
+}: CrossTipProps) {
   if (!active || !payload || payload.length === 0) return null;
   const pt = payload[0]?.payload;
   if (!pt) return null;
