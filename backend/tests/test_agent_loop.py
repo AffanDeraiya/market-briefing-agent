@@ -1,6 +1,6 @@
 """Fully offline tests for the agent loop (agent.py, nodes.py, events.py, cassette.py).
 
-Network calls are prevented by monkeypatching execute_tool in nodes.py.
+Network calls are prevented by monkeypatching execute_tool in utils/reasoning.py.
 A FakeBackend replays a pre-built sequence of LLMResponse objects so no real
 LLM API key is required.
 """
@@ -17,7 +17,7 @@ from src.agents.market_brief.events import (
     CollectingEmitter,
     estimate_cost_usd,
 )
-from src.agents.market_brief.nodes import strip_code_fences
+from src.agents.market_brief.utils.parsing import strip_code_fences
 from src.llm import LLMBackend, LLMResponse, ToolCall, ToolSpec, Turn, Usage
 from src.schemas import DISCLAIMER
 
@@ -130,9 +130,9 @@ def _resp_final(json_text: str = _VALID_BRIEF_JSON) -> LLMResponse:
 
 @pytest.fixture(autouse=True)
 def patch_execute_tool(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Replace execute_tool in nodes.py with a canned no-op."""
+    """Replace execute_tool in utils/reasoning.py with a canned no-op."""
     monkeypatch.setattr(
-        "src.agents.market_brief.nodes.execute_tool",
+        "src.agents.market_brief.utils.reasoning.execute_tool",
         lambda name, tool_input, **kwargs: ('{"ok": true}', False),
     )
 
@@ -355,8 +355,8 @@ def test_estimate_cost_zero_tokens() -> None:
 
 
 def test_attach_market_data_populates_indicators_and_52w() -> None:
-    from src.agents.market_brief.nodes import attach_market_data
     from src.agents.market_brief.state import RunState
+    from src.agents.market_brief.utils.parsing import attach_market_data
     from src.schemas import parse_brief
 
     brief = parse_brief(_VALID_BRIEF_DICT)
@@ -387,8 +387,8 @@ def test_attach_market_data_populates_indicators_and_52w() -> None:
 
 
 def test_attach_market_data_noop_without_tool_outputs() -> None:
-    from src.agents.market_brief.nodes import attach_market_data
     from src.agents.market_brief.state import RunState
+    from src.agents.market_brief.utils.parsing import attach_market_data
     from src.schemas import parse_brief
 
     brief = parse_brief(_VALID_BRIEF_DICT)
@@ -402,8 +402,8 @@ def test_attach_market_data_noop_without_tool_outputs() -> None:
 
 def test_attach_market_data_price_history_fields() -> None:
     """attach_market_data overwrites price/change/currency from price_history_out."""
-    from src.agents.market_brief.nodes import attach_market_data
     from src.agents.market_brief.state import RunState
+    from src.agents.market_brief.utils.parsing import attach_market_data
     from src.schemas import parse_brief
 
     brief = parse_brief(_VALID_BRIEF_DICT)
@@ -429,8 +429,8 @@ def test_attach_market_data_price_history_fields() -> None:
 
 def test_attach_market_data_fundamentals_fields() -> None:
     """attach_market_data overwrites market_cap/pe/sector from fundamentals_out."""
-    from src.agents.market_brief.nodes import attach_market_data
     from src.agents.market_brief.state import RunState
+    from src.agents.market_brief.utils.parsing import attach_market_data
     from src.schemas import parse_brief
 
     brief = parse_brief(_VALID_BRIEF_DICT)
@@ -451,8 +451,8 @@ def test_attach_market_data_fundamentals_fields() -> None:
 
 def test_attach_market_data_fundamentals_pe_forward_fallback() -> None:
     """When pe_trailing is None, pe falls back to pe_forward."""
-    from src.agents.market_brief.nodes import attach_market_data
     from src.agents.market_brief.state import RunState
+    from src.agents.market_brief.utils.parsing import attach_market_data
     from src.schemas import parse_brief
 
     brief = parse_brief(_VALID_BRIEF_DICT)
@@ -474,8 +474,8 @@ def test_attach_market_data_fundamentals_pe_forward_fallback() -> None:
 def test_post_tool_chart_data_reemit_after_detect_anomalies() -> None:
     """After detect_anomalies, chart_data is re-emitted with full anomaly objects."""
     from src.agents.market_brief.events import CollectingEmitter
-    from src.agents.market_brief.nodes import _post_tool_side_effects
     from src.agents.market_brief.state import RunState
+    from src.agents.market_brief.utils.reasoning import _post_tool_side_effects
 
     state = RunState(ticker="AAPL", period="3mo")
     # Simulate price history already captured
@@ -514,8 +514,8 @@ def test_post_tool_chart_data_reemit_after_detect_anomalies() -> None:
 def test_post_tool_chart_data_no_reemit_without_price_history() -> None:
     """If price history not yet captured, detect_anomalies does not emit chart_data."""
     from src.agents.market_brief.events import CollectingEmitter
-    from src.agents.market_brief.nodes import _post_tool_side_effects
     from src.agents.market_brief.state import RunState
+    from src.agents.market_brief.utils.reasoning import _post_tool_side_effects
 
     state = RunState(ticker="AAPL", period="3mo")
     # price_history_out is None — detect_anomalies arrives first
@@ -544,8 +544,8 @@ def test_post_tool_chart_data_no_reemit_without_price_history() -> None:
 def test_anomaly_focus_enriched_payload() -> None:
     """_maybe_emit_anomaly_focus includes magnitude/severity from anomalies_detail."""
     from src.agents.market_brief.events import CollectingEmitter
-    from src.agents.market_brief.nodes import _maybe_emit_anomaly_focus
     from src.agents.market_brief.state import RunState
+    from src.agents.market_brief.utils.reasoning import _maybe_emit_anomaly_focus
     from src.llm import ToolCall
 
     state = RunState(ticker="AAPL", period="3mo")
@@ -580,8 +580,8 @@ def test_anomaly_focus_enriched_payload() -> None:
 def test_anomaly_focus_no_detail_emits_date_kind_only() -> None:
     """_maybe_emit_anomaly_focus emits only date+kind when detail not found."""
     from src.agents.market_brief.events import CollectingEmitter
-    from src.agents.market_brief.nodes import _maybe_emit_anomaly_focus
     from src.agents.market_brief.state import RunState
+    from src.agents.market_brief.utils.reasoning import _maybe_emit_anomaly_focus
     from src.llm import ToolCall
 
     state = RunState(ticker="AAPL", period="3mo")

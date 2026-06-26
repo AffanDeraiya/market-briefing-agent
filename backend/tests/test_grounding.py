@@ -12,7 +12,7 @@ import json
 from copy import deepcopy
 from typing import Any
 
-from src.agents.market_brief.nodes import parse_final
+from src.agents.market_brief.utils.parsing import parse_final
 from src.schemas import DISCLAIMER
 
 _BRIEF: dict[str, Any] = {

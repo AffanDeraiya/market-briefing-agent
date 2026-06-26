@@ -144,7 +144,7 @@ def replay_cassette(path: str | Path) -> ReplayResult:
         as_of = final_brief_dict.get("as_of")
         today = as_of if isinstance(as_of, str) else None
 
-    with patch("src.agents.market_brief.nodes.execute_tool", executor):
+    with patch("src.agents.market_brief.utils.reasoning.execute_tool", executor):
         result = run_agent(
             cas["request"]["ticker"],
             cas["request"]["period"],

@@ -13,12 +13,12 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from src.agents.market_brief.nodes import (
+from src.agents.market_brief.state import RunState
+from src.agents.market_brief.utils.parsing import (
     _NO_SIGNAL_RATIONALE,
     attach_market_data,
     parse_final,
 )
-from src.agents.market_brief.state import RunState
 from src.schemas import DISCLAIMER, Signal, parse_brief
 
 # ---------------------------------------------------------------------------
