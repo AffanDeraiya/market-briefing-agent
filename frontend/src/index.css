@@ -1232,6 +1232,15 @@
     color: var(--accent);
   }
 
+  /* Bug 12: real visible hero heading (h1 is sr-only) */
+  .home h2.hero {
+    font:
+      600 52px/1.05 'Space Grotesk',
+      sans-serif;
+    letter-spacing: -0.025em;
+    max-width: 15ch;
+  }
+
   .home .sub {
     color: var(--ts);
     font-size: 16px;
@@ -1797,6 +1806,103 @@
     }
   }
 
+  /* ---- Tablet intermediate hero size ---- */
+  @media (max-width: 768px) {
+    .home h2.hero {
+      font-size: 36px;
+    }
+  }
+
+  /* ---- Phone tier (≤480px) ---- */
+  @media (max-width: 480px) {
+    /* Bug 1: run header — allow wrapping, tighten padding */
+    .runhead {
+      flex-wrap: wrap;
+      padding: 12px 14px;
+      gap: 8px 10px;
+      position: static;
+      top: auto;
+    }
+
+    .runhead .tkr {
+      font-size: 16px;
+    }
+
+    .runhead .actions button {
+      font-size: 12px;
+      padding: 5px 9px;
+    }
+
+    /* Bug 3: home action row — stack vertically */
+    .home .row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .home .periods {
+      display: flex;
+    }
+
+    .home .periods button {
+      flex: 1;
+    }
+
+    .home .gen {
+      width: 100%;
+      justify-content: center;
+    }
+
+    /* Bug 6 + 7: un-stick both strip and runhead to prevent overlap */
+    .strip {
+      position: static;
+    }
+
+    /* Bug 7: condense runstats so tool steps get priority */
+    .runstats {
+      font-size: 10px;
+      padding: 0 10px;
+    }
+
+    /* Bug 8: 52-week range bar labels */
+    .range52 .r-top {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .range52 .r-ends {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    /* Bug 9: board side padding */
+    .board {
+      padding: 20px 14px 48px;
+    }
+
+    /* Bug 10: verif-banner chips lose auto left margin */
+    .verif-banner .vb-chips {
+      margin-left: 0;
+    }
+
+    /* Bug 12: hero heading shrinks to 30px on phones */
+    .home h2.hero {
+      font-size: 30px;
+    }
+
+    /* Keep sub text readable at narrow width */
+    .home .sub {
+      font-size: 14px;
+    }
+  }
+
+  /* ---- Extra-small phones (≤430px) ---- */
+  @media (max-width: 430px) {
+    /* Bug 5: snapbar drops from 3 to 2 columns */
+    .snapbar {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     /* Disable all animations */
     .skel-veil::after,
@@ -1833,6 +1939,39 @@
     .skel-veil::after {
       transform: translateX(0);
       opacity: 0;
+    }
+  }
+
+  /* ---- Mobile touch: citation chip open state (mirrors .cite:hover .cpop) ---- */
+  /* Toggled via the `is-open` class set by React state when !hasHover. */
+  .cite.is-open .cpop {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%);
+    pointer-events: auto;
+  }
+
+  /* Keyboard: Tab-focusing the chip also reveals the popover on all devices. */
+  .cite:focus-within .cpop {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%);
+    pointer-events: auto;
+  }
+
+  /* Narrow phone: the centred popover can overflow the viewport edge.
+     Left-align it to the chip instead and cap its width. */
+  @media (max-width: 480px) {
+    .cite .cpop {
+      max-width: 78vw;
+      left: 0;
+      right: auto;
+      transform: translateY(4px); /* hidden: keep only the Y offset */
+    }
+    .cite:hover .cpop,
+    .cite.is-open .cpop,
+    .cite:focus-within .cpop {
+      transform: none; /* open: remove Y offset too */
     }
   }
 }

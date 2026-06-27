@@ -98,8 +98,11 @@ function AnomalyPin({
   severity = 'high',
   chartWidth = 0,
 }: AnomalyPinProps) {
-  const calloutW = 148;
-  const calloutH = 22;
+  // Narrow mode: shrink callout dimensions on small viewports to prevent overlap.
+  const narrow = chartWidth > 0 && chartWidth < 420;
+  const calloutW = narrow ? 96 : 148;
+  const calloutH = narrow ? 18 : 22;
+  const fontSize = narrow ? 9 : 11;
   const pinHeight = 36 + stackOffset;
   // Clamp pill left edge (≥2px) and right edge (≤ chartWidth - calloutW - 2px).
   const maxRx = chartWidth > 0 ? chartWidth - calloutW - 2 : Infinity;
@@ -124,26 +127,30 @@ function AnomalyPin({
         strokeWidth={1}
         strokeDasharray="2 2"
       />
-      {/* Amber callout pill */}
-      <rect
-        x={rx}
-        y={ry}
-        width={calloutW}
-        height={calloutH}
-        rx={5}
-        fill={color}
-      />
-      <text
-        x={cx}
-        y={ry + 15}
-        fill="#fff"
-        fontSize={11}
-        fontWeight={600}
-        fontFamily="JetBrains Mono, monospace"
-        textAnchor="middle"
-      >
-        {label}
-      </text>
+      {/* Amber callout pill — on narrow widths only render for the active pin */}
+      {(!narrow || isLinked) && (
+        <>
+          <rect
+            x={rx}
+            y={ry}
+            width={calloutW}
+            height={calloutH}
+            rx={5}
+            fill={color}
+          />
+          <text
+            x={cx}
+            y={ry + (calloutH - 4)}
+            fill="#fff"
+            fontSize={fontSize}
+            fontWeight={600}
+            fontFamily="JetBrains Mono, monospace"
+            textAnchor="middle"
+          >
+            {label}
+          </text>
+        </>
+      )}
       {/* Dot */}
       <circle
         className={`anom-dot${isLinked ? ' pulse' : ''}`}
@@ -251,9 +258,13 @@ export function PriceChart({
     Math.round(ymin + (ymax - ymin) * 0.75),
   ];
 
-  // Show a subset of x-axis labels: every 3rd + last
+  // Show a subset of x-axis labels: every 5th + last on narrow viewports, every 3rd + last otherwise.
   const xTickDates = pts
-    .filter((_, i) => i % 3 === 0 || i === n - 1)
+    .filter((_, i) =>
+      chartWidth > 0 && chartWidth < 420
+        ? i % 5 === 0 || i === n - 1
+        : i % 3 === 0 || i === n - 1,
+    )
     .map((p) => p.date);
 
   const hasAnomalies = resolvedAnomalies.length > 0;

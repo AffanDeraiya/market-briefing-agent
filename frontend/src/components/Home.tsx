@@ -173,13 +173,7 @@ export function Home({ onGenerate }: Props) {
       {/* Visually hidden product name heading for accessibility + tests */}
       <h1 className="sr-only">Market Briefing Agent</h1>
       <div className="eyebrow">Agentic research · cited market briefs</div>
-      <h2
-        style={{
-          font: '600 52px/1.05 "Space Grotesk", sans-serif',
-          letterSpacing: '-0.025em',
-          maxWidth: '15ch',
-        }}
-      >
+      <h2 className="hero">
         Watch an agent{' '}
         <em style={{ fontStyle: 'normal', color: 'var(--accent)' }}>
           build the brief

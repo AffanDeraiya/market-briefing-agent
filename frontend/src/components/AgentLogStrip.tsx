@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { LogStep, UsagePayload } from '../lib/types';
 import { TOOL_DESCRIPTIONS } from '../lib/demoFixture';
+import { useHasHover } from '../lib/useHasHover';
 
 const MAX_TOOL_CALLS = 15;
 
@@ -109,15 +110,72 @@ function PortalPop({
   );
 }
 
-/** Per-step hover state hook — returns hovered/focused flag + handlers. */
-function useHover() {
+/**
+ * Per-step interaction hook — hover on desktop, tap-toggle on touch.
+ *
+ * hasHover (from useHasHover) selects the interaction mode:
+ *   true  → existing mouse/focus behaviour; onClick is a no-op.
+ *   false → onClick toggles active; outside pointerdown / Escape closes it.
+ *
+ * The onClick guard skips inner <button> elements so that e.g. the "collapse"
+ * button inside RunStatsCell still works without toggling the pop.
+ */
+function useInteraction(hasHover: boolean) {
   const [active, setActive] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const onMouseEnter = useCallback(() => setActive(true), []);
-  const onMouseLeave = useCallback(() => setActive(false), []);
-  const onFocus = useCallback(() => setActive(true), []);
-  const onBlur = useCallback(() => setActive(false), []);
-  return { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur };
+
+  // Desktop: mouse enter/leave drives the pop.
+  const onMouseEnter = useCallback(() => {
+    if (hasHover) setActive(true);
+  }, [hasHover]);
+  const onMouseLeave = useCallback(() => {
+    if (hasHover) setActive(false);
+  }, [hasHover]);
+  // Keyboard focus shows the pop on hover-capable devices only.
+  // On touch, focus fires after a tap (before the click), so we let
+  // onClick handle toggle exclusively to avoid double-open.
+  const onFocus = useCallback(() => {
+    if (hasHover) setActive(true);
+  }, [hasHover]);
+  const onBlur = useCallback(() => {
+    if (hasHover) setActive(false);
+  }, [hasHover]);
+
+  // Touch: tap toggles the pop.  Taps on inner focusable buttons are ignored
+  // so they keep their own click handlers without also toggling the pop.
+  const onClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!hasHover) {
+        if ((e.target as HTMLElement).closest('button')) return;
+        setActive((prev) => !prev);
+      }
+    },
+    [hasHover],
+  );
+
+  // While open on a touch device, close on outside-tap or Escape.
+  // Listeners are installed only when needed and cleaned up on close/unmount.
+  useEffect(() => {
+    if (hasHover || !active) return;
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setActive(false);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setActive(false);
+    };
+
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [hasHover, active]);
+
+  return { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur, onClick };
 }
 
 function ToolStepCard({ step }: { step: LogStep }) {
@@ -291,10 +349,11 @@ function deduplicateLog(log: LogStep[]): LogStep[] {
   return merged;
 }
 
-/** Individual step wrapper that handles hover + portal pop. */
+/** Individual step wrapper — hover on desktop, tap-toggle on touch. */
 function ToolStep({ step }: { step: LogStep }) {
-  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
-    useHover();
+  const hasHover = useHasHover();
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur, onClick } =
+    useInteraction(hasHover);
   const isDone = step.ms !== undefined;
   return (
     <div
@@ -306,6 +365,7 @@ function ToolStep({ step }: { step: LogStep }) {
       onMouseLeave={onMouseLeave}
       onFocus={onFocus}
       onBlur={onBlur}
+      onClick={onClick}
     >
       <span className="tick">{step.ok === false ? '✗' : '✓'}</span>
       <span className="nm">{step.name}</span>
@@ -318,8 +378,9 @@ function ToolStep({ step }: { step: LogStep }) {
 }
 
 function AnomalyStep({ step }: { step: LogStep }) {
-  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
-    useHover();
+  const hasHover = useHasHover();
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur, onClick } =
+    useInteraction(hasHover);
   return (
     <div
       ref={ref}
@@ -330,6 +391,7 @@ function AnomalyStep({ step }: { step: LogStep }) {
       onMouseLeave={onMouseLeave}
       onFocus={onFocus}
       onBlur={onBlur}
+      onClick={onClick}
     >
       <span className="dia">◆</span>
       <span className="nm" style={{ color: '#e6b260' }}>
@@ -377,8 +439,9 @@ function VerifyStepCard({ step }: { step: LogStep }) {
 }
 
 function VerifyStep({ step }: { step: LogStep }) {
-  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
-    useHover();
+  const hasHover = useHasHover();
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur, onClick } =
+    useInteraction(hasHover);
   return (
     <div
       ref={ref}
@@ -389,6 +452,7 @@ function VerifyStep({ step }: { step: LogStep }) {
       onMouseLeave={onMouseLeave}
       onFocus={onFocus}
       onBlur={onBlur}
+      onClick={onClick}
     >
       <span className="shld" style={{ color: '#5a9ec9', fontSize: 11 }}>
         ✓
@@ -404,8 +468,9 @@ function VerifyStep({ step }: { step: LogStep }) {
 }
 
 function ComposeStep({ step }: { step: LogStep }) {
-  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
-    useHover();
+  const hasHover = useHasHover();
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur, onClick } =
+    useInteraction(hasHover);
   return (
     <div
       ref={ref}
@@ -416,6 +481,7 @@ function ComposeStep({ step }: { step: LogStep }) {
       onMouseLeave={onMouseLeave}
       onFocus={onFocus}
       onBlur={onBlur}
+      onClick={onClick}
     >
       <span className="pen">✎</span>
       <span className="nm" style={{ color: '#c8d4de' }}>
@@ -445,8 +511,9 @@ function RunStatsCell({
   isSuccess: boolean;
   onCollapse: () => void;
 }) {
-  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
-    useHover();
+  const hasHover = useHasHover();
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur, onClick } =
+    useInteraction(hasHover);
   return (
     <div
       ref={ref}
@@ -457,6 +524,7 @@ function RunStatsCell({
       onMouseLeave={onMouseLeave}
       onFocus={onFocus}
       onBlur={onBlur}
+      onClick={onClick}
     >
       <span className="sv mono">
         {toolCallCount}/{MAX_TOOL_CALLS}
@@ -496,10 +564,12 @@ function BudgetBar({
   budgetPct: number;
   budgetLabel: string;
 }) {
-  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur } =
-    useHover();
+  const hasHover = useHasHover();
+  const { active, ref, onMouseEnter, onMouseLeave, onFocus, onBlur, onClick } =
+    useInteraction(hasHover);
   // Track the cursor's viewport X so the card pops under the mouse, not at the
-  // far-left edge of this full-width bar.
+  // far-left edge of this full-width bar.  On touch, cursorX stays undefined
+  // and PortalPop centres/clamps to the viewport — that's the right fallback.
   const [cursorX, setCursorX] = useState<number | undefined>(undefined);
   return (
     <div
@@ -520,6 +590,7 @@ function BudgetBar({
       onMouseLeave={onMouseLeave}
       onFocus={onFocus}
       onBlur={onBlur}
+      onClick={onClick}
     >
       <i style={{ width: `${budgetPct}%` }} />
       <PortalPop anchorRef={ref} visible={active} cursorX={cursorX}>
